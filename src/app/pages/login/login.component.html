@@ -1,0 +1,78 @@
+<div class="login-container">
+  <mat-card class="login-card">
+    <mat-card-header>
+      <mat-card-subtitle>Sign in to your account</mat-card-subtitle>
+    </mat-card-header>
+    
+    <mat-card-content>
+      <form [formGroup]="form" (ngSubmit)="submit()" class="login-form">
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Email Address</mat-label>
+          <input 
+            matInput 
+            type="email" 
+            formControlName="user_mail" 
+            placeholder="Enter your email"
+            autocomplete="email">
+          <mat-icon matSuffix>email</mat-icon>
+          <mat-error *ngIf="form.get('user_mail')?.hasError('required')">
+            Email is required
+          </mat-error>
+          <mat-error *ngIf="form.get('user_mail')?.hasError('email')">
+            Please enter a valid email address
+          </mat-error>
+          <mat-error *ngIf="form.get('user_mail')?.hasError('maxlength')">
+            Email must be less than 50 characters
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Password</mat-label>
+          <input 
+            matInput 
+            [type]="hidePassword ? 'password' : 'text'" 
+            formControlName="user_password" 
+            placeholder="Enter your password"
+            autocomplete="current-password">
+          <button 
+            mat-icon-button 
+            matSuffix 
+            type="button"
+            (click)="hidePassword = !hidePassword" 
+            [attr.aria-label]="'Hide password'" 
+            [attr.aria-pressed]="hidePassword">
+            <mat-icon>{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
+          </button>
+          <mat-error *ngIf="form.get('user_password')?.hasError('required')">
+            Password is required
+          </mat-error>
+          <mat-error *ngIf="form.get('user_password')?.hasError('minlength')">
+            Password must be at least 3 characters long
+          </mat-error>
+        </mat-form-field>
+
+        <div class="error-message" *ngIf="errorMsg">
+          <mat-icon>error</mat-icon>
+          <span>{{ errorMsg }}</span>
+        </div>
+
+        <div class="form-actions">
+          <button 
+            mat-raised-button 
+            color="primary" 
+            type="submit" 
+            class="login-button"
+            [disabled]="loading || form.invalid">
+            <mat-icon *ngIf="!loading">login</mat-icon>
+            <mat-spinner *ngIf="loading" diameter="20"></mat-spinner>
+            <span>{{ loading ? 'Signing in...' : 'Sign In' }}</span>
+          </button>
+        </div>
+
+        <div class="register-link">
+          <a mat-button color="primary" routerLink="/register">Create Account</a>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>

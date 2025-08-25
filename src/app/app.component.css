@@ -1,0 +1,12 @@
+:root { --gap: 12px; }
+* { box-sizing: border-box; }
+body, html { margin: 0; }
+.nav { display: flex; align-items: center; gap: var(--gap); padding: 0 16px; }
+.nav a { text-decoration: none; }
+.brand { font-weight: 500; }
+.spacer { flex: 1; }
+.main { max-width: 960px; margin: 24px auto; padding: 0 16px; }
+.card { padding: 8px; }
+.row { display: grid; gap: 12px; }
+.error { color: #b00020; font-size: 0.9rem; }
+.success { color: #08660b; font-size: 0.95rem; }

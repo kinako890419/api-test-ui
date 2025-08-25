@@ -1,0 +1,211 @@
+<div class="projects-container">
+  <!-- Toolbar Section -->
+  <div class="toolbar">
+    <!-- New Project Button -->
+    <button mat-raised-button color="primary" (click)="navigateToCreate()" class="new-project-btn">
+      <mat-icon>add</mat-icon>
+      New Project
+    </button>
+
+    <!-- <mat-form-field appearance="outline" class="search-field">
+      <mat-label>Search Projects</mat-label>
+      <input 
+        matInput 
+        placeholder="Search by name or description..." 
+        [ngModel]="keyword()" 
+        (ngModelChange)="onKeywordChange($event)"
+        (keyup.enter)="load()"
+      />
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field> -->
+
+    <mat-form-field appearance="outline" class="status-field">
+      <mat-label>Filter by Status</mat-label>
+      <mat-select [ngModel]="status()" (ngModelChange)="onStatusChange($event)">
+        <mat-option [value]="''">All Status</mat-option>
+        <mat-option value="PENDING">
+          <mat-icon class="status-icon pending">schedule</mat-icon>
+          Pending
+        </mat-option>
+        <mat-option value="IN_PROGRESS">
+          <mat-icon class="status-icon in-progress">work</mat-icon>
+          In Progress
+        </mat-option>
+        <mat-option value="COMPLETED">
+          <mat-icon class="status-icon completed">check_circle</mat-icon>
+          Completed
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="sort-field">
+      <mat-label>Sort by</mat-label>
+      <mat-select [ngModel]="sortBy()" (ngModelChange)="onSortChange($event)">
+        <mat-option value="createdAt">
+          <mat-icon>access_time</mat-icon>
+          Created Date
+        </mat-option>
+        <mat-option value="updatedAt">
+          <mat-icon>update</mat-icon>
+          Updated Date
+        </mat-option>
+        <mat-option value="projectName">
+          <mat-icon>sort_by_alpha</mat-icon>
+          Project Name
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="order-field">
+      <mat-label>Order</mat-label>
+      <mat-select [ngModel]="order()" (ngModelChange)="onOrderChange($event)">
+        <mat-option value="desc">
+          <mat-icon>arrow_downward</mat-icon>
+          Descending
+        </mat-option>
+        <mat-option value="asc">
+          <mat-icon>arrow_upward</mat-icon>
+          Ascending
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <!-- <div class="toolbar-actions">
+      <button 
+        mat-raised-button 
+        color="primary" 
+        (click)="load()" 
+        [disabled]="loading()"
+        class="refresh-btn"
+      >
+        <mat-icon [class.spinning]="loading()">refresh</mat-icon>
+        Refresh
+      </button>
+    </div> -->
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading()" class="loading-container">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p class="loading-text">Loading projects...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error()" class="error-container">
+    <mat-icon class="error-icon">error_outline</mat-icon>
+    <p class="error-message">{{ error() }}</p>
+    <button mat-stroked-button color="warn" (click)="load()">
+      <mat-icon>refresh</mat-icon>
+      Try Again
+    </button>
+  </div>
+
+  <!-- Results Info -->
+  <!-- <div class="results-info" *ngIf="!loading() && !error()">
+    <mat-form-field appearance="outline" class="page-size-field">
+      <mat-label>Items per page</mat-label>
+      <mat-select [ngModel]="pageSize()" (ngModelChange)="changePageSize($event)">
+        <mat-option value="5">5</mat-option>
+        <mat-option value="10">10</mat-option>
+        <mat-option value="15">15</mat-option>
+        <mat-option value="25">25</mat-option>
+        <mat-option value="50">50</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div> -->
+
+  <!-- Projects Grid -->
+  <div class="projects-grid" *ngIf="!loading() && !error()">
+    <mat-card 
+      class="project-card" 
+      *ngFor="let project of items(); trackBy: trackByProjectId" 
+      (click)="open(project)"
+      tabindex="0"
+      (keyup.enter)="open(project)"
+    >
+      <mat-card-header>
+        <div mat-card-avatar class="project-avatar">
+          <mat-icon>folder</mat-icon>
+        </div>
+        <mat-card-title class="project-title" [title]="project.project_name">
+          {{ project.project_name || 'Untitled Project' }}
+        </mat-card-title>
+        <mat-card-subtitle class="project-status">
+          <mat-icon 
+            class="status-indicator" 
+            [ngClass]="getStatusClass(project.project_status)"
+          >
+            {{ getStatusIcon(project.project_status) }}
+          </mat-icon>
+          {{ getStatusLabel(project.project_status) }}
+        </mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content>
+        <p class="project-description" [title]="project.project_description">
+          {{ project.project_description || 'No description available' }}
+        </p>
+        <div class="project-meta">
+          <span class="meta-item">
+            <mat-icon>schedule</mat-icon>
+            Created: {{ formatDate(project.project_created_time) }}
+          </span>
+          <span class="meta-item" *ngIf="project.project_updated_time">
+            <mat-icon>update</mat-icon>
+            Updated: {{ formatDate(project.project_updated_time) }}
+          </span>
+        </div>
+      </mat-card-content>
+
+      <mat-card-actions align="end">
+        <button 
+          mat-button 
+          color="accent" 
+          (click)="editProject(project); $event.stopPropagation()"
+          *ngIf="canEditProject(project)"
+          [title]="getEditTooltip(project)"
+        >
+          <mat-icon>edit</mat-icon>
+          Edit
+        </button>
+        <button 
+          mat-button 
+          color="warn" 
+          (click)="deleteProject(project, $event)"
+          *ngIf="canEditProject(project)"
+          title="Delete project"
+        >
+          <mat-icon>delete</mat-icon>
+          Delete
+        </button>
+        <button mat-button color="primary" (click)="open(project); $event.stopPropagation()">
+          <mat-icon>open_in_new</mat-icon>
+          Open
+        </button>
+      </mat-card-actions>
+    </mat-card>
+
+    <!-- Empty State -->
+    <div *ngIf="items().length === 0" class="empty-state">
+      <mat-icon class="empty-icon">search_off</mat-icon>
+      <h3>No projects found</h3>
+      <button mat-raised-button color="primary" (click)="clearFilters()">
+        <mat-icon>clear_all</mat-icon>
+        Clear Filters
+      </button>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination-container" *ngIf="!loading() && !error() && totalItems() > 0">
+    <mat-paginator 
+      [length]="totalItems()"
+      [pageSize]="pageSize()"
+      [pageIndex]="currentPage() - 1"
+      [pageSizeOptions]="[5, 10, 15, 25, 50]"
+      [showFirstLastButtons]="true"
+      (page)="onPageChange($event)"
+      aria-label="Select page of projects">
+    </mat-paginator>
+  </div>
+</div>

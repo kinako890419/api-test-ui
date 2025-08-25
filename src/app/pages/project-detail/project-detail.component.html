@@ -1,0 +1,228 @@
+<div class="project-detail-container">
+  <!-- Loading State -->
+  <div *ngIf="loading()" class="center">
+    <mat-spinner diameter="32"></mat-spinner>
+    <p class="loading-text">Loading project details...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error()" class="error">
+    {{ error() }}
+    <button mat-stroked-button color="warn" (click)="goBack()" class="back-button">
+      <mat-icon>arrow_back</mat-icon>
+      Back to Projects
+    </button>
+  </div>
+
+  <!-- Project Details -->
+  <mat-card *ngIf="!loading() && !error() && project() as p" class="project-info-card">
+    <mat-card-header>
+      <mat-card-title>{{ p.project_name }}</mat-card-title>
+      <mat-card-subtitle>
+        <mat-icon class="status-icon" [ngClass]="p.project_status?.toLowerCase()">
+          {{ p.project_status === 'PENDING' ? 'schedule' : 
+             p.project_status === 'IN_PROGRESS' ? 'work' : 
+             p.project_status === 'COMPLETED' ? 'check_circle' : 'help_outline' }}
+        </mat-icon>
+        {{ p.project_status || 'N/A' }}
+      </mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <p class="desc">{{ p.project_description || 'No description' }}</p>
+      <div class="meta small">
+        <span><mat-icon>access_time</mat-icon> Created: {{ formatDate(p.project_created_time) }}</span>
+        <span *ngIf="p.project_updated_time"><mat-icon>update</mat-icon> Updated: {{ formatDate(p.project_updated_time) }}</span>
+      </div>
+
+      <h3>Members ({{ p.member_list?.length || 0 }})</h3>
+      <ul class="members-list">
+        <li *ngFor="let m of p.member_list || []" class="member-item">
+          <mat-icon class="member-icon">person</mat-icon>
+          <div class="member-info">
+            <div class="member-name">{{ m.user_name }}</div>
+            <div class="member-role">{{ m.user_project_role }}</div>
+            <div class="member-email">{{ m.user_email }}</div>
+          </div>
+        </li>
+      </ul>
+      
+      <div *ngIf="(p.member_list?.length || 0) === 0" class="no-members">
+        <mat-icon>group_off</mat-icon>
+        <span>No members assigned to this project</span>
+      </div>
+    </mat-card-content>
+
+    <mat-card-actions align="end">
+      <button mat-button (click)="goBack()">
+        <mat-icon>arrow_back</mat-icon>
+        Back to Projects
+      </button>
+      <button 
+        mat-button 
+        color="warn" 
+        (click)="deleteProject()"
+        *ngIf="canEditProject()"
+        title="Delete project"
+      >
+        <mat-icon>delete</mat-icon>
+        Delete
+      </button>
+      <button 
+        mat-raised-button 
+        color="primary" 
+        (click)="editProject()"
+        *ngIf="canEditProject()"
+        [title]="getEditTooltip()"
+      >
+        <mat-icon>edit</mat-icon>
+        {{ getEditButtonText() }}
+      </button>
+    </mat-card-actions>
+  </mat-card>
+
+  <!-- Tasks Section -->
+  <div *ngIf="!loading() && !error() && project()" class="tasks-section">
+    <div class="tasks-header">
+      <h2>Tasks</h2>
+      <button 
+        mat-icon-button 
+        (click)="refreshTasks()" 
+        [disabled]="tasksLoading()"
+        title="Refresh tasks"
+      >
+        <mat-icon [class.spinning]="tasksLoading()">refresh</mat-icon>
+      </button>
+    </div>
+
+    <!-- Tasks Loading -->
+    <div *ngIf="tasksLoading()" class="tasks-loading">
+      <mat-spinner diameter="24"></mat-spinner>
+      <span>Loading tasks...</span>
+    </div>
+
+    <!-- Tasks Error -->
+    <div *ngIf="tasksError()" class="tasks-error">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ tasksError() }}</span>
+      <button mat-button (click)="refreshTasks()">
+        <mat-icon>refresh</mat-icon>
+        Retry
+      </button>
+    </div>
+
+    <!-- Tasks Kanban Board -->
+    <div *ngIf="!tasksLoading() && !tasksError()" class="tasks-kanban">
+      <!-- Pending Column -->
+      <div class="kanban-column">
+        <div class="column-header pending">
+          <mat-icon>schedule</mat-icon>
+          <span>Pending ({{ pendingTasks().length }})</span>
+        </div>
+        <div class="column-content">
+          <mat-card 
+            *ngFor="let task of pendingTasks()" 
+            class="task-card pending-task"
+            (click)="openTask(task)"
+          >
+            <mat-card-header>
+              <mat-card-title class="task-title">{{ task.task_name }}</mat-card-title>
+              <mat-card-subtitle class="task-creator">by {{ task.creator }}</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <p class="task-description">{{ task.task_description || 'No description' }}</p>
+              <div class="task-meta">
+                <span *ngIf="task.task_deadline" class="deadline">
+                  <mat-icon>event</mat-icon>
+                  {{ formatDate(task.task_deadline) }}
+                </span>
+                <span class="members-count">
+                  <mat-icon>group</mat-icon>
+                  {{ task.member_list?.length || 0 }}
+                </span>
+              </div>
+            </mat-card-content>
+          </mat-card>
+          <div *ngIf="pendingTasks().length === 0" class="empty-column">
+            <mat-icon>check_circle_outline</mat-icon>
+            <span>No pending tasks</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- In Progress Column -->
+      <div class="kanban-column">
+        <div class="column-header in-progress">
+          <mat-icon>work</mat-icon>
+          <span>In Progress ({{ inProgressTasks().length }})</span>
+        </div>
+        <div class="column-content">
+          <mat-card 
+            *ngFor="let task of inProgressTasks()" 
+            class="task-card in-progress-task"
+            (click)="openTask(task)"
+          >
+            <mat-card-header>
+              <mat-card-title class="task-title">{{ task.task_name }}</mat-card-title>
+              <mat-card-subtitle class="task-creator">by {{ task.creator }}</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <p class="task-description">{{ task.task_description || 'No description' }}</p>
+              <div class="task-meta">
+                <span *ngIf="task.task_deadline" class="deadline">
+                  <mat-icon>event</mat-icon>
+                  {{ formatDate(task.task_deadline) }}
+                </span>
+                <span class="members-count">
+                  <mat-icon>group</mat-icon>
+                  {{ task.member_list?.length || 0 }}
+                </span>
+              </div>
+            </mat-card-content>
+          </mat-card>
+          <div *ngIf="inProgressTasks().length === 0" class="empty-column">
+            <mat-icon>work_outline</mat-icon>
+            <span>No tasks in progress</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Completed Column -->
+      <div class="kanban-column">
+        <div class="column-header completed">
+          <mat-icon>check_circle</mat-icon>
+          <span>Completed ({{ completedTasks().length }})</span>
+        </div>
+        <div class="column-content">
+          <mat-card 
+            *ngFor="let task of completedTasks()" 
+            class="task-card completed-task"
+            (click)="openTask(task)"
+          >
+            <mat-card-header>
+              <mat-card-title class="task-title">{{ task.task_name }}</mat-card-title>
+              <mat-card-subtitle class="task-creator">by {{ task.creator }}</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <p class="task-description">{{ task.task_description || 'No description' }}</p>
+              <div class="task-meta">
+                <span *ngIf="task.task_deadline" class="deadline">
+                  <mat-icon>event</mat-icon>
+                  {{ formatDate(task.task_deadline) }}
+                </span>
+                <span class="members-count">
+                  <mat-icon>group</mat-icon>
+                  {{ task.member_list?.length || 0 }}
+                </span>
+              </div>
+            </mat-card-content>
+          </mat-card>
+          <div *ngIf="completedTasks().length === 0" class="empty-column">
+            <mat-icon>pending_actions</mat-icon>
+            <span>No completed tasks</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

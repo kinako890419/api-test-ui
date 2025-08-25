@@ -1,0 +1,96 @@
+<div class="create-project-container">
+  <mat-card class="create-form-card">
+    <mat-card-header>
+      <div mat-card-avatar class="create-avatar">
+        <mat-icon>add</mat-icon>
+      </div>
+      <mat-card-title>Create New Project</mat-card-title>
+      <mat-card-subtitle>Set up a new project to start organizing your work</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="create-form">
+        <!-- Project Name -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Project Name</mat-label>
+          <input 
+            matInput 
+            formControlName="project_name"
+            placeholder="Enter project name"
+            maxlength="50"
+            required
+          />
+          <mat-hint align="end">{{ form.get('project_name')?.value?.length || 0 }}/50</mat-hint>
+          <mat-error *ngIf="hasFieldError('project_name')">
+            {{ getFieldError('project_name') }}
+          </mat-error>
+        </mat-form-field>
+
+        <!-- Project Description -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Project Description</mat-label>
+          <textarea 
+            matInput 
+            formControlName="project_description"
+            placeholder="Enter project description (optional)"
+            rows="4"
+            maxlength="250"
+          ></textarea>
+          <mat-hint align="end">{{ form.get('project_description')?.value?.length || 0 }}/250</mat-hint>
+          <mat-error *ngIf="hasFieldError('project_description')">
+            {{ getFieldError('project_description') }}
+          </mat-error>
+        </mat-form-field>
+
+        <!-- Project Status -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Initial Status</mat-label>
+          <mat-select formControlName="project_status">
+            <mat-option 
+              *ngFor="let option of statusOptions" 
+              [value]="option.value"
+            >
+              <mat-icon class="status-icon" [ngClass]="option.value.toLowerCase()">
+                {{ option.icon }}
+              </mat-icon>
+              {{ option.label }}
+            </mat-option>
+          </mat-select>
+          <mat-error *ngIf="hasFieldError('project_status')">
+            {{ getFieldError('project_status') }}
+          </mat-error>
+        </mat-form-field>
+
+        <!-- Error Message -->
+        <div *ngIf="error()" class="error-message">
+          <mat-icon>error_outline</mat-icon>
+          {{ error() }}
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+          <button 
+            type="button" 
+            mat-stroked-button 
+            (click)="onCancel()"
+            [disabled]="saving()"
+          >
+            <mat-icon>cancel</mat-icon>
+            Cancel
+          </button>
+
+          <button 
+            type="submit" 
+            mat-raised-button 
+            color="primary"
+            [disabled]="form.invalid || saving()"
+          >
+            <mat-icon *ngIf="!saving()">add</mat-icon>
+            <mat-spinner *ngIf="saving()" diameter="20"></mat-spinner>
+            {{ saving() ? 'Creating...' : 'Create Project' }}
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>

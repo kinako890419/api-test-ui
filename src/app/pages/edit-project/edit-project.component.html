@@ -1,0 +1,112 @@
+<div class="edit-project-container">
+  <!-- Loading State -->
+  <div *ngIf="loading()" class="loading-container">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p class="loading-text">Loading project details...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error() && !loading()" class="error-container">
+    <mat-icon class="error-icon">error_outline</mat-icon>
+    <p class="error-message">{{ error() }}</p>
+    <button mat-stroked-button color="warn" (click)="onCancel()">
+      <mat-icon>arrow_back</mat-icon>
+      Go Back
+    </button>
+  </div>
+
+  <!-- Edit Form -->
+  <mat-card *ngIf="!loading() && !error() && project()" class="edit-form-card">
+    <mat-card-header>
+      <div mat-card-avatar class="edit-avatar">
+        <mat-icon>edit</mat-icon>
+      </div>
+      <mat-card-title>Edit Project</mat-card-title>
+      <mat-card-subtitle>Update project information</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="edit-form">
+        <!-- Warning message for completed projects -->
+        <div *ngIf="isProjectCompleted()" class="completion-warning">
+          <mat-icon>info</mat-icon>
+          <span>This project is completed. Only the status can be modified.</span>
+        </div>
+
+        <!-- Project Name -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Project Name</mat-label>
+          <input 
+            matInput 
+            formControlName="project_name"
+            placeholder="Enter project name"
+            maxlength="50"
+          />
+          <mat-hint align="end">{{ form.get('project_name')?.value?.length || 0 }}/50</mat-hint>
+          <mat-error *ngIf="hasFieldError('project_name')">
+            {{ getFieldError('project_name') }}
+          </mat-error>
+        </mat-form-field>
+
+        <!-- Project Description -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Project Description</mat-label>
+          <textarea 
+            matInput 
+            formControlName="project_description"
+            placeholder="Enter project description (optional)"
+            rows="4"
+            maxlength="250"
+          ></textarea>
+          <mat-hint align="end">{{ form.get('project_description')?.value?.length || 0 }}/250</mat-hint>
+          <mat-error *ngIf="hasFieldError('project_description')">
+            {{ getFieldError('project_description') }}
+          </mat-error>
+        </mat-form-field>
+
+        <!-- Project Status -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Project Status</mat-label>
+          <mat-select formControlName="project_status">
+            <mat-option 
+              *ngFor="let option of statusOptions" 
+              [value]="option.value"
+            >
+              <mat-icon class="status-icon" [ngClass]="option.value.toLowerCase()">
+                {{ option.icon }}
+              </mat-icon>
+              {{ option.label }}
+            </mat-option>
+          </mat-select>
+          <mat-error *ngIf="hasFieldError('project_status')">
+            {{ getFieldError('project_status') }}
+          </mat-error>
+        </mat-form-field>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+          <button 
+            type="button" 
+            mat-stroked-button 
+            (click)="onCancel()"
+            [disabled]="saving()"
+          >
+            <mat-icon>cancel</mat-icon>
+            Cancel
+          </button>
+
+          <button 
+            type="submit" 
+            mat-raised-button 
+            color="primary"
+            [disabled]="form.invalid || saving()"
+          >
+            <mat-icon *ngIf="!saving()">save</mat-icon>
+            <mat-spinner *ngIf="saving()" diameter="20"></mat-spinner>
+            {{ saving() ? 'Saving...' : 'Save Changes' }}
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>
