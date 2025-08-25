@@ -1,6 +1,7 @@
 import { Component, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';import { Router, RouterLink } from '@angular/router';
+import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { FailResponse, RegisterSuccess } from '../../models/auth.models';
 import { Subscription } from 'rxjs';

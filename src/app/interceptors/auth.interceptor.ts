@@ -1,8 +1,7 @@
 import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { catchError, throwError } from 'rxjs'; // RxJS 7.8+
-// If you're on <=7.5, use: import { catchError } from 'rxjs/operators'; import { throwError } from 'rxjs';
+import { catchError, throwError } from 'rxjs';
 
 import { AuthService } from '../services/auth.service';
 
