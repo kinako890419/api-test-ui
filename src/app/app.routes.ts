@@ -28,9 +28,24 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/project-detail/project-detail.component').then(m => m.ProjectDetailComponent),
   },
   {
+    path: 'projects/:id/tasks/:taskId',
+    canActivate: [AuthGuard],
+    loadComponent: () => import('./pages/task-detail/task-detail.component').then(m => m.TaskDetailComponent),
+  },
+  {
     path: 'projects/:id/edit',
     canActivate: [AuthGuard],
     loadComponent: () => import('./pages/edit-project/edit-project.component').then(m => m.EditProjectComponent),
+  },
+  {
+    path: 'users',
+    canActivate: [AuthGuard],
+    loadComponent: () => import('./pages/admin-users/admin-users.component').then(m => m.AdminUsersComponent),
+  },
+  {
+    path: 'users/:id',
+    canActivate: [AuthGuard],
+    loadComponent: () => import('./pages/profile/profile.component').then(m => m.ProfileComponent),
   },
   { path: '**', redirectTo: 'login' },
 ];

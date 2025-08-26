@@ -2,10 +2,10 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { Observable } from 'rxjs';
+import { ProjStatus, ResponseMsg } from '../models/project.models';
 
 export type SortBy = 'createdAt' | 'updatedAt' | 'projectName';
 export type Order = 'asc' | 'desc';
-export type ProjStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
 
 export interface ProjectUserDetailsResp {
   user_id: number;
@@ -25,6 +25,23 @@ export interface ProjDetailsResp {
   member_list?: ProjectUserDetailsResp[];
   project_created_time?: string;
   project_updated_time?: string;
+}
+
+export interface TagsResp {
+  tag_id: number;
+  tag_name: string;
+  creator?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ProjectTagsListResp {
+  project_id: number;
+  tags: TagsResp[];
+}
+
+export interface ProjTagContentReq {
+  tag_name: string; // <= 10 chars per backend schema
 }
 
 export interface ProjectQuery {
@@ -47,43 +64,14 @@ export interface CreateProjectReq {
   project_status?: ProjStatus;
 }
 
-export interface ResponseMsg {
-  status_type: string;
-  response_message: string;
-}
+export type ProjectMemberRole = 'OWNER' | 'USER';
 
-export interface TaskUserDetailsResp {
+export interface SetProjectMemberRoleRq {
   user_id: number;
-  user_email: string;
-  user_name: string;
-  invited_by?: string;
-  created_at?: string;
-  updated_at?: string;
+  user_role: ProjectMemberRole | string; // backend ignores case; keep string for flexibility
 }
 
-export interface TaskListResp {
-  task_id: number;
-  task_name: string;
-  creator: string;
-  task_description?: string;
-  status?: ProjStatus;
-  task_deadline?: string;
-  member_list?: TaskUserDetailsResp[];
-  created_at?: string;
-  updated_at?: string;
-  is_editable?: boolean;
-}
-
-export interface ViewAllTaskResp {
-  project_id: number;
-  tasks_list: TaskListResp[];
-}
-
-export interface TaskQuery {
-  status?: ProjStatus;
-  sortBy?: 'createdAt' | 'updatedAt' | 'taskName';
-  order?: Order;
-}
+// Task-related interfaces moved to TaskService
 
 @Injectable({ providedIn: 'root' })
 export class ProjectService {
@@ -113,11 +101,39 @@ export class ProjectService {
     return this.http.delete<ResponseMsg>(`${environment.apiBaseUrl}/projects/${id}`);
   }
 
-  getProjectTasks(projectId: number, query: TaskQuery = {}): Observable<ViewAllTaskResp> {
-    let params = new HttpParams();
-    for (const [k, v] of Object.entries(query)) {
-      if (v !== undefined && v !== null && v !== '') params = params.set(k, String(v));
-    }
-    return this.http.get<ViewAllTaskResp>(`${environment.apiBaseUrl}/projects/${projectId}/tasks`, { params });
+  /**
+   * Project Members APIs
+   */
+  inviteMembers(projectId: number, payload: SetProjectMemberRoleRq[]): Observable<ResponseMsg> {
+    return this.http.post<ResponseMsg>(`${environment.apiBaseUrl}/projects/${projectId}/users`, payload);
+  }
+
+  setMemberRole(projectId: number, payload: SetProjectMemberRoleRq): Observable<ResponseMsg> {
+    return this.http.patch<ResponseMsg>(`${environment.apiBaseUrl}/projects/${projectId}/users`, payload);
+  }
+
+  removeMember(projectId: number, userId: number): Observable<ResponseMsg> {
+    return this.http.delete<ResponseMsg>(`${environment.apiBaseUrl}/projects/${projectId}/users/${userId}`);
+  }
+
+  // Task CRUD moved to TaskService
+
+  /**
+   * Project Tags APIs
+   */
+  getProjectTags(projectId: number): Observable<ProjectTagsListResp> {
+    return this.http.get<ProjectTagsListResp>(`${environment.apiBaseUrl}/projects/${projectId}/tags`);
+  }
+
+  addProjectTag(projectId: number, body: ProjTagContentReq): Observable<ResponseMsg> {
+    return this.http.post<ResponseMsg>(`${environment.apiBaseUrl}/projects/${projectId}/tags`, body);
+  }
+
+  editProjectTag(projectId: number, tagId: number, body: ProjTagContentReq): Observable<ResponseMsg> {
+    return this.http.put<ResponseMsg>(`${environment.apiBaseUrl}/projects/${projectId}/tags/${tagId}`, body);
+  }
+
+  deleteProjectTag(projectId: number, tagId: number): Observable<ResponseMsg> {
+    return this.http.delete<ResponseMsg>(`${environment.apiBaseUrl}/projects/${projectId}/tags/${tagId}`);
   }
 }

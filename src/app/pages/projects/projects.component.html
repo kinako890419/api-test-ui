@@ -9,10 +9,10 @@
 
     <!-- <mat-form-field appearance="outline" class="search-field">
       <mat-label>Search Projects</mat-label>
-      <input 
-        matInput 
-        placeholder="Search by name or description..." 
-        [ngModel]="keyword()" 
+      <input
+        matInput
+        placeholder="Search by name or description..."
+        [ngModel]="keyword()"
         (ngModelChange)="onKeywordChange($event)"
         (keyup.enter)="load()"
       />
@@ -71,10 +71,10 @@
     </mat-form-field>
 
     <!-- <div class="toolbar-actions">
-      <button 
-        mat-raised-button 
-        color="primary" 
-        (click)="load()" 
+      <button
+        mat-raised-button
+        color="primary"
+        (click)="load()"
         [disabled]="loading()"
         class="refresh-btn"
       >
@@ -116,9 +116,9 @@
 
   <!-- Projects Grid -->
   <div class="projects-grid" *ngIf="!loading() && !error()">
-    <mat-card 
-      class="project-card" 
-      *ngFor="let project of items(); trackBy: trackByProjectId" 
+    <mat-card
+      class="project-card"
+      *ngFor="let project of items(); trackBy: trackByProjectId"
       (click)="open(project)"
       tabindex="0"
       (keyup.enter)="open(project)"
@@ -131,8 +131,8 @@
           {{ project.project_name || 'Untitled Project' }}
         </mat-card-title>
         <mat-card-subtitle class="project-status">
-          <mat-icon 
-            class="status-indicator" 
+          <mat-icon
+            class="status-indicator"
             [ngClass]="getStatusClass(project.project_status)"
           >
             {{ getStatusIcon(project.project_status) }}
@@ -158,9 +158,9 @@
       </mat-card-content>
 
       <mat-card-actions align="end">
-        <button 
-          mat-button 
-          color="accent" 
+        <button
+          mat-button
+          color="accent"
           (click)="editProject(project); $event.stopPropagation()"
           *ngIf="canEditProject(project)"
           [title]="getEditTooltip(project)"
@@ -168,9 +168,9 @@
           <mat-icon>edit</mat-icon>
           Edit
         </button>
-        <button 
-          mat-button 
-          color="warn" 
+        <button
+          mat-button
+          color="warn"
           (click)="deleteProject(project, $event)"
           *ngIf="canEditProject(project)"
           title="Delete project"
@@ -187,18 +187,13 @@
 
     <!-- Empty State -->
     <div *ngIf="items().length === 0" class="empty-state">
-      <mat-icon class="empty-icon">search_off</mat-icon>
       <h3>No projects found</h3>
-      <button mat-raised-button color="primary" (click)="clearFilters()">
-        <mat-icon>clear_all</mat-icon>
-        Clear Filters
-      </button>
     </div>
   </div>
 
   <!-- Pagination -->
   <div class="pagination-container" *ngIf="!loading() && !error() && totalItems() > 0">
-    <mat-paginator 
+    <mat-paginator
       [length]="totalItems()"
       [pageSize]="pageSize()"
       [pageIndex]="currentPage() - 1"

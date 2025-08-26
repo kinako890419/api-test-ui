@@ -1,0 +1,5 @@
+.profile-page { padding: 16px; }
+.center { display:flex; align-items:center; gap:8px; }
+.error { color:#b00020; margin: 8px 0; }
+.full { width:100%; }
+.muted { color:#666; }

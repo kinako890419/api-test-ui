@@ -1,0 +1,38 @@
+<div class="profile-page">
+  <div *ngIf="loading()" class="center"><mat-spinner diameter="28"></mat-spinner></div>
+  <div *ngIf="error()" class="error">{{ error() }}</div>
+
+  <mat-card *ngIf="!loading() && !error() && me() as u">
+    <mat-card-header>
+      <mat-card-title>Profile</mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content>
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>User name</mat-label>
+        <input matInput [(ngModel)]="form.user_name" maxlength="20" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>Email</mat-label>
+        <input matInput [(ngModel)]="form.user_email" maxlength="50" />
+      </mat-form-field>
+
+      <p class="muted">User ID: {{ u.user_id }}</p>
+      <p class="muted">Role: {{ u.user_role }}</p>
+      <p class="muted" *ngIf="u.created_at">
+        Created: {{ u.created_at | date:'MMM d, y, HH:mm' }}
+      </p>
+      <p class="muted" *ngIf="u.updated_at">
+        Updated: {{ u.updated_at | date:'MMM d, y, HH:mm' }}
+      </p>
+    </mat-card-content>
+
+    <mat-card-actions align="end">
+      <button mat-raised-button color="primary" (click)="save()" [disabled]="saving()">
+        <mat-icon>save</mat-icon>
+        Save
+      </button>
+    </mat-card-actions>
+  </mat-card>
+</div>

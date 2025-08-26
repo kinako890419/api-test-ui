@@ -4,12 +4,12 @@
   padding: 20px;
 }
 
-.center { 
-  display: flex; 
+.center {
+  display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center; 
-  padding: 40px 16px; 
+  justify-content: center;
+  padding: 40px 16px;
 }
 
 .loading-text {
@@ -17,9 +17,9 @@
   color: #666;
 }
 
-.error { 
-  color: #b00020; 
-  margin: 8px 0; 
+.error {
+  color: #b00020;
+  margin: 8px 0;
   text-align: center;
   padding: 20px;
 }
@@ -32,9 +32,9 @@
   margin-bottom: 24px;
 }
 
-.meta { 
-  color: #555; 
-  margin-bottom: 8px; 
+.meta {
+  color: #555;
+  margin-bottom: 8px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -42,8 +42,8 @@
 
 .small { font-size: 12px; }
 
-.desc { 
-  margin: 12px 0; 
+.desc {
+  margin: 12px 0;
   line-height: 1.5;
 }
 
@@ -90,6 +90,12 @@
   flex: 1;
 }
 
+.member-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .member-name {
   font-weight: 500;
   font-size: 14px;
@@ -116,6 +122,17 @@
   padding: 20px 0;
 }
 
+.invite-form {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.invite-field { width: 360px; max-width: 100%; }
+.invite-field.small { width: 160px; max-width: 50%; }
+.role-field { width: 160px; }
+
 /* Tasks Section */
 .tasks-section {
   margin-top: 24px;
@@ -127,6 +144,14 @@
   justify-content: space-between;
   margin-bottom: 16px;
 }
+
+.tasks-actions { display: flex; gap: 8px; align-items: center; }
+
+.new-task-form { background: #f8f9fa; border: 1px solid #e6e6e6; border-radius: 8px; padding: 12px; margin-bottom: 16px; }
+.new-task-form .row { display: flex; gap: 12px; }
+.new-task-form .row.end { justify-content: flex-end; }
+.new-task-form .full { width: 100%; }
+.new-task-form .half { width: 50%; }
 
 .tasks-header h2 {
   margin: 0;
@@ -288,7 +313,7 @@
     grid-template-columns: 1fr;
     gap: 12px;
   }
-  
+
   .column-content {
     max-height: 400px;
   }
@@ -298,7 +323,7 @@
   .project-detail-container {
     padding: 10px;
   }
-  
+
   .tasks-header {
     flex-direction: column;
     align-items: flex-start;

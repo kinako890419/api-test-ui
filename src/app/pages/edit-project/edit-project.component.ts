@@ -10,12 +10,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { 
-  ProjectService, 
-  ProjDetailsResp, 
-  ProjStatus, 
-  EditProjectReq 
-} from '../../services/project.service';
+import { ProjectService, ProjDetailsResp, EditProjectReq } from '../../services/project.service';
+import { ProjStatus } from '../../models/project.models';
 
 @Component({
   selector: 'app-edit-project',
@@ -89,7 +85,7 @@ export class EditProjectComponent {
     this.projectService.getById(id).subscribe({
       next: (project) => {
         this.project.set(project);
-        
+
         // Populate form with existing data
         this.form.patchValue({
           project_name: project.project_name || '',
@@ -104,8 +100,8 @@ export class EditProjectComponent {
         }
       },
       error: (err) => {
-        const errorMessage = err?.error?.response_message || 
-                           err?.message || 
+        const errorMessage = err?.error?.response_message ||
+                           err?.message ||
                            'Failed to load project details';
         this.error.set(errorMessage);
         console.error('Failed to load project:', err);
@@ -135,7 +131,7 @@ export class EditProjectComponent {
     this.error.set('');
 
     const updates: EditProjectReq = {};
-    
+
     // Only include enabled form fields in the update
     if (this.form.get('project_name')?.enabled) {
       updates.project_name = this.form.get('project_name')?.value;
@@ -152,17 +148,17 @@ export class EditProjectComponent {
           duration: 3000,
           panelClass: ['success-snackbar']
         });
-        
+
         // Navigate back to project details
         this.router.navigate(['/projects', project.project_id]);
       },
       error: (err) => {
-        const errorMessage = err?.error?.response_message || 
-                           err?.message || 
+        const errorMessage = err?.error?.response_message ||
+                           err?.message ||
                            'Failed to update project';
         this.error.set(errorMessage);
         console.error('Failed to update project:', err);
-        
+
         this.snackBar.open(errorMessage, 'Close', {
           duration: 5000,
           panelClass: ['error-snackbar']
@@ -206,11 +202,11 @@ export class EditProjectComponent {
     }
 
     const errors = control.errors;
-    
+
     if (errors['required']) {
       return `${this.getFieldLabel(fieldName)} is required`;
     }
-    
+
     if (errors['maxlength']) {
       const maxLength = errors['maxlength'].requiredLength;
       return `${this.getFieldLabel(fieldName)} cannot exceed ${maxLength} characters`;

@@ -1,0 +1,9 @@
+.admin-users { padding: 16px; }
+.center { display: flex; align-items: center; gap: 8px; }
+.error { color: #b00020; margin: 8px 0; }
+.users-table { width: 100%; border-collapse: collapse; }
+.users-table th, .users-table td { padding: 8px 12px; border-bottom: 1px solid #eee; }
+.users-table th { text-align: left; color: #666; font-weight: 600; }
+.spacer { flex: 1; }
+mat-card-header { display: flex; align-items: center; }
+.small { width: 140px; }

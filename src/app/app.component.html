@@ -2,13 +2,15 @@
   <span class="spacer"></span>
   <ng-container *ngIf="auth.isAuthenticated(); else loggedOut">
     <a mat-button routerLink="/projects">Projects</a>
+  <a mat-button [routerLink]="['/users', auth.currentUser()?.user_id]">Profile</a>
+  <a mat-button routerLink="/users" *ngIf="auth.currentUser()?.user_role === 'ADMIN'">Admin</a>
     <button mat-raised-button color="accent" (click)="logout()">Logout</button>
   </ng-container>
   <ng-template #loggedOut>
     <a mat-button routerLink="/login">Login</a>
     <a mat-raised-button color="accent" routerLink="/register">Register</a>
   </ng-template>
-  
+
 </mat-toolbar>
 <main class="main">
   <router-outlet></router-outlet>

@@ -11,11 +11,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { 
-  ProjectService, 
-  CreateProjectReq, 
-  ProjStatus 
-} from '../../services/project.service';
+import { ProjectService, CreateProjectReq } from '../../services/project.service';
+import { ProjStatus } from '../../models/project.models';
 
 @Component({
   selector: 'app-create-project',
@@ -80,7 +77,7 @@ export class CreateProjectComponent {
           duration: 3000,
           panelClass: ['success-snackbar']
         });
-        
+
         // Close dialog if in dialog mode, otherwise navigate
         if (this.dialogRef) {
           this.dialogRef.close(true); // Pass true to indicate success
@@ -89,12 +86,12 @@ export class CreateProjectComponent {
         }
       },
       error: (err) => {
-        const errorMessage = err?.error?.response_message || 
-                           err?.message || 
+        const errorMessage = err?.error?.response_message ||
+                           err?.message ||
                            'Failed to create project';
         this.error.set(errorMessage);
         console.error('Failed to create project:', err);
-        
+
         this.snackBar.open(errorMessage, 'Close', {
           duration: 5000,
           panelClass: ['error-snackbar']
@@ -137,11 +134,11 @@ export class CreateProjectComponent {
     }
 
     const errors = control.errors;
-    
+
     if (errors['required']) {
       return `${this.getFieldLabel(fieldName)} is required`;
     }
-    
+
     if (errors['maxlength']) {
       const maxLength = errors['maxlength'].requiredLength;
       return `${this.getFieldLabel(fieldName)} cannot exceed ${maxLength} characters`;

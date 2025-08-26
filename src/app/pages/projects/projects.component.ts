@@ -13,14 +13,8 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { FormsModule } from '@angular/forms';
-import { 
-  ProjectService, 
-  ProjDetailsResp, 
-  ProjStatus, 
-  SortBy, 
-  Order,
-  ProjectQuery
-} from '../../services/project.service';
+import { ProjectService, ProjDetailsResp, SortBy, Order, ProjectQuery } from '../../services/project.service';
+import { ProjStatus } from '../../models/project.models';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -75,7 +69,7 @@ export class ProjectsComponent implements OnInit, OnDestroy {
     const currentItems = this.items().length;
     const currentPageNumber = this.currentPage();
     const pageSizeValue = this.pageSize();
-    
+
     if (currentItems < pageSizeValue || !this.hasMorePages()) {
       // We're on the last page, show exact count
       return (currentPageNumber - 1) * pageSizeValue + currentItems;
@@ -110,19 +104,19 @@ export class ProjectsComponent implements OnInit, OnDestroy {
     this.svc.list(query).subscribe({
       next: (projects) => {
         const projectList = projects || [];
-        
+
         // Apply client-side keyword filtering since API doesn't support search
-        const filteredProjects = this.keyword().trim() 
+        const filteredProjects = this.keyword().trim()
           ? projectList.filter(project => this.matchesKeyword(project, this.keyword().trim().toLowerCase()))
           : projectList;
-        
+
         this.items.set(filteredProjects);
-        
+
         // Since API doesn't provide total count, we need to handle this differently
         // The count display should show actual filtered items, not pagination estimate
         const currentPageItems = filteredProjects.length;
         const currentPageNumber = this.currentPage();
-        
+
         if (currentPageItems < this.pageSize()) {
           // Last page - we can calculate exact total
           this.hasMorePages.set(false);
@@ -136,8 +130,8 @@ export class ProjectsComponent implements OnInit, OnDestroy {
         }
       },
       error: (err) => {
-        const errorMessage = err?.error?.response_message || 
-                           err?.message || 
+        const errorMessage = err?.error?.response_message ||
+                           err?.message ||
                            'Failed to load projects. Please try again.';
         this.error.set(errorMessage);
         console.error('Failed to load projects:', err);
@@ -153,12 +147,12 @@ export class ProjectsComponent implements OnInit, OnDestroy {
    */
   onKeywordChange(keyword: string): void {
     this.keyword.set(keyword);
-    
+
     // Clear existing timeout
     if (this.searchTimeout) {
       clearTimeout(this.searchTimeout);
     }
-    
+
     // Debounce search to avoid too many operations
     // Since we're doing client-side filtering, we reload to get fresh data
     this.searchTimeout = setTimeout(() => {
@@ -233,7 +227,7 @@ export class ProjectsComponent implements OnInit, OnDestroy {
    */
   canEditProject(project: ProjDetailsResp): boolean {
     const currentUser = this.auth.currentUser();
-    
+
     if (!project || !currentUser) {
       return false;
     }
@@ -291,7 +285,7 @@ export class ProjectsComponent implements OnInit, OnDestroy {
     const filteredItems = this.items().filter(project =>
       this.matchesKeyword(project, searchKeyword)
     );
-    
+
     this.items.set(filteredItems);
     this.totalItems.set(filteredItems.length);
   }
@@ -373,7 +367,7 @@ export class ProjectsComponent implements OnInit, OnDestroy {
   private matchesKeyword(project: ProjDetailsResp, keyword: string): boolean {
     const name = (project.project_name || '').toLowerCase();
     const description = (project.project_description || '').toLowerCase();
-    
+
     return name.includes(keyword) || description.includes(keyword);
   }
 
@@ -389,7 +383,7 @@ export class ProjectsComponent implements OnInit, OnDestroy {
    */
   deleteProject(project: ProjDetailsResp, event: Event): void {
     event.stopPropagation(); // Prevent navigation to project details
-    
+
     if (confirm(`Are you sure you want to delete project "${project.project_name}"?`)) {
       this.svc.delete(project.project_id).subscribe({
         next: () => {

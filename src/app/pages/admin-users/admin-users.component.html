@@ -1,0 +1,50 @@
+<div class="admin-users">
+  <div *ngIf="loading()" class="center"><mat-spinner diameter="28"></mat-spinner></div>
+  <div *ngIf="error()" class="error">{{ error() }}</div>
+
+  <mat-card *ngIf="!loading() && !error()">
+    <mat-card-header>
+      <mat-card-title>All Users</mat-card-title>
+      <span class="spacer"></span>
+      <mat-form-field appearance="outline" class="small">
+        <mat-label>View</mat-label>
+        <mat-select [ngModel]="viewDeleted()" (ngModelChange)="viewDeleted.set($event); refresh();">
+          <mat-option [value]="false">Active</mat-option>
+          <mat-option [value]="true">Deleted</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <button mat-icon-button (click)="refresh()" title="Refresh"><mat-icon>refresh</mat-icon></button>
+    </mat-card-header>
+    <mat-card-content>
+      <table class="users-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let u of users()">
+            <td>{{ u.user_id }}</td>
+            <td>{{ u.user_name }}</td>
+            <td>{{ u.user_email }}</td>
+            <td>{{ u.user_role }}</td>
+            <td>
+              <button mat-button color="primary" (click)="grantAdmin(u)" [disabled]="u.user_role==='ADMIN' || viewDeleted()">
+                <mat-icon>security</mat-icon>
+                Grant ADMIN
+              </button>
+              <button mat-stroked-button color="warn" (click)="deleteUser(u)" [disabled]="viewDeleted()">
+                <mat-icon>delete</mat-icon>
+                Delete
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </mat-card-content>
+  </mat-card>
+</div>
