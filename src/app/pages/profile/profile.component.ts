@@ -6,7 +6,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { FormsModule } from '@angular/forms';
 import { UserService, UserProfileResp, EditUserInfoReq } from '../../services/user.service';
 import { AuthService } from '../../services/auth.service';
@@ -23,7 +22,6 @@ import { Router, ActivatedRoute } from '@angular/router';
     MatSnackBarModule,
     MatFormFieldModule,
     MatInputModule,
-  MatProgressSpinnerModule,
     FormsModule,
   ],
   templateUrl: './profile.component.html',
@@ -36,7 +34,6 @@ export class ProfileComponent {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
-  loading = signal(false);
   error = signal('');
   me = signal<UserProfileResp | null>(null);
   form: EditUserInfoReq = {};
@@ -50,14 +47,12 @@ export class ProfileComponent {
       this.router.navigate(['/login']);
       return;
     }
-    this.loading.set(true);
     this.usersSvc.getById(id).subscribe({
       next: (u) => {
         this.me.set(u);
         this.form = { user_name: u.user_name, user_email: u.user_email };
       },
-      error: (err) => this.error.set(err?.error?.response_message || 'Failed to load profile'),
-      complete: () => this.loading.set(false)
+      error: (err) => this.error.set(err?.error?.response_message || 'Failed to load profile')
     });
   }
 

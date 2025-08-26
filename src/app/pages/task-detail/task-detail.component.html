@@ -1,199 +1,419 @@
 <div class="task-detail-container">
-  <div *ngIf="loading()" class="center">
-    <mat-spinner diameter="32"></mat-spinner>
-    <p>Loading task...</p>
+  <!-- Error State -->
+  <div *ngIf="error()" class="error-state">
+    <mat-icon class="error-icon">error_outline</mat-icon>
+    <span class="error-message">{{ error() }}</span>
   </div>
 
-  <div *ngIf="error()" class="error">
-    <mat-icon>error_outline</mat-icon>
-    {{ error() }}
-  </div>
-
-  <mat-card *ngIf="!loading() && !error() && task() as t" class="task-card">
-    <mat-card-header>
-      <mat-card-title>{{ t.task_name }}</mat-card-title>
-      <mat-card-subtitle>
-        <mat-icon>{{ statusIcon(t.status) }}</mat-icon>
-        {{ t.status }}
+  <!-- Main Task Card -->
+  <mat-card *ngIf="!error() && task() as t" class="task-card elevation-2">
+    <!-- Task Header -->
+    <mat-card-header class="task-header">
+      <mat-card-title class="task-title">{{ t.task_name }}</mat-card-title>
+      <mat-card-subtitle class="task-subtitle">
+        <mat-icon class="status-icon">{{ statusIcon(t.status) }}</mat-icon>
+        <!-- <span class="status-text">{{ getStatusLabel(t.status) }}</span> -->
+        <mat-chip [class]="'status-chip status-' + t.status.toLowerCase()">
+          {{ getStatusLabel(t.status) }}
+        </mat-chip>
       </mat-card-subtitle>
     </mat-card-header>
 
-    <mat-card-content>
-      <p class="desc" *ngIf="!editing()">{{ t.description || 'No description' }}</p>
-      <div class="edit-form" *ngIf="editing()">
-        <mat-form-field appearance="outline" class="full">
-          <mat-label>Task name</mat-label>
-          <input matInput [(ngModel)]="form.task_name" maxlength="50" [disabled]="onlyStatusEditable()" />
-        </mat-form-field>
-        <mat-form-field appearance="outline" class="full">
-          <mat-label>Description</mat-label>
-          <textarea matInput [(ngModel)]="form.task_description" rows="3" maxlength="250" [disabled]="onlyStatusEditable()"></textarea>
-        </mat-form-field>
-        <div class="row">
-          <mat-form-field appearance="outline" class="half">
-            <mat-label>Status</mat-label>
-            <mat-select [(ngModel)]="form.status">
-              <mat-option value="PENDING">Pending</mat-option>
-              <mat-option value="IN_PROGRESS">In Progress</mat-option>
-              <mat-option value="COMPLETED">Completed</mat-option>
-            </mat-select>
-          </mat-form-field>
-          <mat-form-field appearance="outline" class="half">
-            <mat-label>Deadline</mat-label>
-            <input matInput [matDatepicker]="picker" [(ngModel)]="deadlineDate" [disabled]="onlyStatusEditable()" placeholder="Choose a date" />
-            <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
-            <mat-datepicker #picker></mat-datepicker>
-          </mat-form-field>
-        </div>
-        <div class="row end">
-          <button mat-button (click)="toggleEdit()">Cancel</button>
-          <button mat-raised-button color="primary" (click)="save()" [disabled]="saving()">
-            <mat-icon>save</mat-icon>
-            Save
-          </button>
-        </div>
-      </div>
+    <mat-card-content class="task-content">
+      <!-- Task Description -->
+      <div class="description-section">
+        <p *ngIf="!editing()" class="task-description">
+          {{ t.description || 'No description provided' }}
+        </p>
 
-      <div class="meta">
-        <span>
-          <mat-icon>person</mat-icon>
-          Creator: {{ t.creator_name }}
-        </span>
-        <span>
-          <mat-icon>event</mat-icon>
-          Created: {{ format(t.created_at) }}
-        </span>
-        <span *ngIf="t.updated_at">
-          <mat-icon>update</mat-icon>
-          Updated: {{ format(t.updated_at) }}
-        </span>
-        <span *ngIf="t.deadline">
-          <mat-icon>schedule</mat-icon>
-          Deadline: {{ format(t.deadline) }}
-        </span>
-      </div>
-
-      <h3>Members ({{ t.member_lists?.length || 0 }})</h3>
-      <div class="invite-form" *ngIf="canManageTaskMembers()">
-        <mat-form-field appearance="outline" class="invite-field">
-          <mat-label>Select user to invite</mat-label>
-          <mat-select [(ngModel)]="inviteUserIds" multiple>
-            <mat-option *ngFor="let m of projectMembers()" [value]="m.user_id" [disabled]="isAlreadyTaskMember(m.user_id)">
-              {{ m.user_name }} ({{ m.user_email }})
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
-        <button mat-raised-button color="primary" (click)="inviteToTask()" [disabled]="inviteUserIds.length === 0 || savingInvite()">
-          <mat-icon>person_add</mat-icon>
-          Invite selected
+        <div class="action-buttons">
+        <button 
+          *ngIf="!editing() && t.is_editable" 
+          mat-stroked-button 
+          color="primary" 
+          (click)="toggleEdit()"
+          class="edit-btn">
+          <mat-icon>edit</mat-icon>
+          Edit Task
+        </button>
+        
+        <button 
+          *ngIf="t.is_editable" 
+          mat-stroked-button 
+          color="warn" 
+          (click)="deleteTask()"
+          class="delete-btn">
+          <mat-icon>delete</mat-icon>
+          Delete Task
         </button>
       </div>
-      <ul class="members">
-        <li *ngFor="let m of t.member_lists || []">
-          <mat-icon>person</mat-icon>
-          <span>{{ m.user_name }}</span>
-          <small class="muted">{{ m.user_email }}</small>
-          <button mat-stroked-button color="warn" class="ml-auto" *ngIf="canManageTaskMembers()" (click)="removeFromTask(m.user_id)" [disabled]="removingUserId() === m.user_id">
-            <mat-icon>person_remove</mat-icon>
-            Remove
-          </button>
-        </li>
-      </ul>
+        
+        <!-- Edit Form -->
+        <div *ngIf="editing()" class="edit-form">
+          <h4 class="edit-title">Edit Task</h4>
+          
+          <mat-form-field appearance="outline" class="form-field full-width">
+            <mat-label>Task Name</mat-label>
+            <input 
+              matInput 
+              [(ngModel)]="form.task_name" 
+              maxlength="50" 
+              [disabled]="onlyStatusEditable()"
+              placeholder="Enter task name" />
+            <mat-hint>{{ form.task_name?.length || 0 }}/50</mat-hint>
+          </mat-form-field>
 
-      <h3>Tags</h3>
-      <div class="tags-section">
-        <mat-chip-set class="mb-8">
-          <mat-chip *ngFor="let tag of t.tags || []" color="primary" selected>
-            {{ tag.tag_name }}
-            <button mat-icon-button *ngIf="canManageTags()" (click)="removeTagFromTask(tag.tag_id)" [disabled]="tagging()" aria-label="Remove tag">
+          <mat-form-field appearance="outline" class="form-field full-width">
+            <mat-label>Description</mat-label>
+            <textarea 
+              matInput 
+              [(ngModel)]="form.task_description" 
+              rows="4" 
+              maxlength="250" 
+              [disabled]="onlyStatusEditable()"
+              placeholder="Describe the task..."></textarea>
+            <mat-hint>{{ form.task_description?.length || 0 }}/250</mat-hint>
+          </mat-form-field>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field half-width">
+              <mat-label>Status</mat-label>
+              <mat-select [(ngModel)]="form.status">
+                <mat-option value="PENDING">
+                  <mat-icon>schedule</mat-icon>
+                  Pending
+                </mat-option>
+                <mat-option value="IN_PROGRESS">
+                  <mat-icon>work</mat-icon>
+                  In Progress
+                </mat-option>
+                <mat-option value="COMPLETED">
+                  <mat-icon>check_circle</mat-icon>
+                  Completed
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="form-field half-width">
+              <mat-label>Deadline</mat-label>
+              <input 
+                matInput 
+                [matDatepicker]="picker" 
+                [(ngModel)]="deadlineDate" 
+                [disabled]="onlyStatusEditable()" 
+                placeholder="Select deadline" />
+              <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+              <mat-datepicker #picker></mat-datepicker>
+            </mat-form-field>
+          </div>
+
+          <div class="form-actions">
+            <button mat-button type="button" (click)="toggleEdit()" class="cancel-btn">
               <mat-icon>close</mat-icon>
+              Cancel
             </button>
-          </mat-chip>
-          <span *ngIf="(t.tags?.length || 0) === 0" class="muted">No tags</span>
-        </mat-chip-set>
+            <button 
+              mat-raised-button 
+              color="primary" 
+              (click)="save()" 
+              [disabled]="saving()"
+              class="save-btn">
+              <mat-icon>save</mat-icon>
+              {{ saving() ? 'Saving...' : 'Save Changes' }}
+            </button>
+          </div>
+        </div>
+      </div>
 
-        <div class="add-tag-row" *ngIf="canManageTags()">
-          <mat-form-field appearance="outline" class="half">
-            <mat-label>Add existing project tag</mat-label>
-            <mat-select [(ngModel)]="selectedTagId">
-              <mat-option *ngFor="let tag of availableProjectTags()" [value]="tag.tag_id">
-                {{ tag.tag_name }}
+      <!-- Task Metadata -->
+      <div class="metadata-section">
+        <div class="metadata-grid">
+          <div class="metadata-item">
+            <mat-icon>person</mat-icon>
+            <span class="metadata-label">Creator:</span>
+            <span class="metadata-value">{{ t.creator_name }}</span>
+          </div>
+          <div class="metadata-item">
+            <mat-icon>event</mat-icon>
+            <span class="metadata-label">Created:</span>
+            <span class="metadata-value">{{ format(t.created_at) }}</span>
+          </div>
+          <div *ngIf="t.updated_at" class="metadata-item">
+            <mat-icon>update</mat-icon>
+            <span class="metadata-label">Updated:</span>
+            <span class="metadata-value">{{ format(t.updated_at) }}</span>
+          </div>
+          <div *ngIf="t.deadline" class="metadata-item">
+            <mat-icon>schedule</mat-icon>
+            <span class="metadata-label">Deadline:</span>
+            <span class="metadata-value">{{ format(t.deadline) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Members Section -->
+      <div class="section members-section">
+        <h3 class="section-title">
+          <mat-icon>group</mat-icon>
+          Members ({{ t.member_lists?.length || 0 }})
+        </h3>
+
+        <!-- Invite Form -->
+        <div *ngIf="t.is_editable" class="invite-section">
+          <mat-form-field appearance="outline" class="invite-field">
+            <mat-label>Add team members</mat-label>
+            <mat-select [(ngModel)]="inviteUserIds" multiple>
+              <mat-option 
+                *ngFor="let m of projectMembers()" 
+                [value]="m.user_id" 
+                [disabled]="isAlreadyTaskMember(m.user_id)">
+                <div class="user-option">
+                  <span class="user-name">{{ m.user_name }}</span>
+                  <span class="user-email">{{ m.user_email }}</span>
+                </div>
               </mat-option>
             </mat-select>
           </mat-form-field>
-          <button mat-raised-button color="primary" (click)="addTagToTask()" [disabled]="!selectedTagId || tagging()">
-            <mat-icon>add</mat-icon>
-            Add Tag
+          <button 
+            mat-raised-button 
+            color="primary" 
+            (click)="inviteToTask()" 
+            [disabled]="inviteUserIds.length === 0 || savingInvite()"
+            class="invite-btn">
+            <mat-icon>person_add</mat-icon>
+            {{ savingInvite() ? 'Adding...' : 'Add Selected' }}
           </button>
+        </div>
+
+        <!-- Members List -->
+        <div class="members-list">
+          <div *ngFor="let m of t.member_lists || []" class="member-item">
+            <div class="member-info">
+              <mat-icon class="member-icon">person</mat-icon>
+              <div class="member-details">
+                <span class="member-name">{{ m.user_name }}</span>
+                <span class="member-email">{{ m.user_email }}</span>
+              </div>
+            </div>
+            <button 
+              *ngIf="t.is_editable" 
+              mat-icon-button 
+              color="warn" 
+              (click)="removeFromTask(m.user_id)" 
+              [disabled]="removingUserId() === m.user_id"
+              class="remove-btn"
+              matTooltip="Remove member">
+              <mat-icon>person_remove</mat-icon>
+            </button>
+          </div>
+          <div *ngIf="(t.member_lists?.length || 0) === 0" class="empty-state">
+            <mat-icon>person_outline</mat-icon>
+            <span>No members assigned</span>
+          </div>
         </div>
       </div>
 
-      <h3>Attachments ({{ t.task_attachments?.length || 0 }})</h3>
-      <div class="upload-row">
-        <input type="file" (change)="onFileSelected($event)" [disabled]="uploading()" />
-        <mat-spinner *ngIf="uploading()" diameter="20"></mat-spinner>
-      </div>
-      <ul class="attachments">
-        <li *ngFor="let a of t.task_attachments || []">
-          <mat-icon>attach_file</mat-icon>
-          <span class="file" [title]="a.content_path">{{ a.file_name }}</span>
-          <button mat-button color="primary" (click)="download(a.id)">
-            <mat-icon>download</mat-icon>
-            Download
-          </button>
-          <button mat-stroked-button color="warn" (click)="deleteAttachment(a.id)" [disabled]="deletingId() === a.id">
-            <mat-icon>delete</mat-icon>
-            Delete
-          </button>
-        </li>
-        <li *ngIf="(t.task_attachments?.length || 0) === 0" class="muted">No attachments</li>
-      </ul>
+      <!-- Tags Section -->
+      <div class="section tags-section">
+        <h3 class="section-title">
+          <mat-icon>label</mat-icon>
+          Tags
+        </h3>
 
-      <h3>Comments ({{ t.task_comments?.length || 0 }})</h3>
-      <div class="comments">
-        <div class="comment" *ngFor="let c of t.task_comments || []">
-          <div class="comment-header">
-            <mat-icon>chat</mat-icon>
-            <strong>{{ c.user_name }}</strong>
-            <span class="time">{{ format(c.created_at) }}</span>
-            <span class="spacer"></span>
-            <ng-container *ngIf="canEditComment(c.user_name)">
-              <button mat-button color="primary" (click)="startEditComment(c.comment_id, c.content)" *ngIf="editingCommentId() !== c.comment_id">
-                <mat-icon>edit</mat-icon>
-                Edit
+        <div class="tags-content">
+          <mat-chip-set class="tags-list">
+            <mat-chip 
+              *ngFor="let tag of t.tags || []" 
+              class="task-tag clickable-tag"
+              (click)="showTagDetails(tag)"
+              [matTooltip]="'Click to view tag details'">
+              <span>{{ tag.tag_name }}</span>
+              <button 
+                *ngIf="t.is_editable" 
+                matChipRemove 
+                (click)="removeTagFromTask(tag.tag_id); $event.stopPropagation()" 
+                [disabled]="tagging()">
+                <mat-icon>cancel</mat-icon>
               </button>
-              <button mat-stroked-button color="warn" (click)="deleteComment(c.comment_id)" *ngIf="editingCommentId() !== c.comment_id">
-                <mat-icon>delete</mat-icon>
-                Delete
-              </button>
-            </ng-container>
+            </mat-chip>
+          </mat-chip-set>
+
+          <div *ngIf="(t.tags?.length || 0) === 0" class="empty-state">
+            <span>No tags applied</span>
           </div>
-          <div *ngIf="editingCommentId() === c.comment_id; else viewComment">
-            <mat-form-field appearance="outline" class="full">
-              <mat-label>Edit comment</mat-label>
-              <textarea matInput rows="3" [ngModel]="editingCommentContent()" (ngModelChange)="editingCommentContent.set($event)"></textarea>
+
+          <!-- Add Tag Form -->
+          <div *ngIf="t.is_editable" class="add-tag-section">
+            <mat-form-field appearance="outline" class="tag-select">
+              <mat-label>Add project tag</mat-label>
+              <mat-select [(ngModel)]="selectedTagId">
+                <mat-option 
+                  *ngFor="let tag of availableProjectTags()" 
+                  [value]="tag.tag_id">
+                  {{ tag.tag_name }}
+                </mat-option>
+              </mat-select>
             </mat-form-field>
-            <div class="row end">
-              <button mat-button (click)="cancelEditComment()">Cancel</button>
-              <button mat-raised-button color="primary" (click)="saveEditComment(c.comment_id)">
-                <mat-icon>save</mat-icon>
-                Save
+            <button 
+              mat-raised-button 
+              color="accent" 
+              (click)="addTagToTask()" 
+              [disabled]="!selectedTagId || tagging()"
+              class="add-tag-btn">
+              <mat-icon>add</mat-icon>
+              {{ tagging() ? 'Adding...' : 'Add Tag' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Attachments Section -->
+      <div class="section attachments-section">
+        <h3 class="section-title">
+          <mat-icon>attachment</mat-icon>
+          Attachments ({{ t.task_attachments?.length || 0 }})
+        </h3>
+
+        <!-- Upload Section -->
+        <div *ngIf="t.is_editable" class="upload-section">
+          <input 
+            #fileInput
+            type="file" 
+            (change)="onFileSelected($event)" 
+            class="file-input" />
+          <button 
+            mat-stroked-button 
+            color="primary" 
+            (click)="fileInput.click()"
+            class="upload-btn">
+            <mat-icon>cloud_upload</mat-icon>
+            Choose File
+          </button>
+        </div>
+
+        <!-- Attachments List -->
+        <div class="attachments-list">
+          <div *ngFor="let a of t.task_attachments || []" class="attachment-item">
+            <div class="attachment-info">
+              <mat-icon class="attachment-icon">attach_file</mat-icon>
+              <span class="attachment-name" [title]="a.content_path">{{ a.file_name }}</span>
+            </div>
+            <div class="attachment-actions">
+              <button 
+                mat-button 
+                color="primary" 
+                (click)="download(a.id)"
+                class="download-btn">
+                <mat-icon>download</mat-icon>
+                Download
+              </button>
+              <button 
+                *ngIf="t.is_editable"
+                mat-icon-button 
+                color="warn" 
+                (click)="deleteAttachment(a.id)" 
+                [disabled]="deletingId() === a.id"
+                matTooltip="Delete attachment">
+                <mat-icon>delete</mat-icon>
               </button>
             </div>
           </div>
-          <ng-template #viewComment>
-            <p class="comment-content">{{ c.content }}</p>
-          </ng-template>
+          <div *ngIf="(t.task_attachments?.length || 0) === 0" class="empty-state">
+            <span>No attachments</span>
+          </div>
         </div>
-        <div *ngIf="(t.task_comments?.length || 0) === 0" class="muted">No comments</div>
+      </div>
 
-        <div class="add-comment" *ngIf="canAddComment()">
-          <mat-form-field appearance="outline" class="full">
-            <mat-label>New comment</mat-label>
-            <textarea matInput rows="3" [ngModel]="newCommentContent()" (ngModelChange)="newCommentContent.set($event)" maxlength="500" placeholder="Write a comment..."></textarea>
+      <!-- Comments Section -->
+      <div class="section comments-section">
+        <h3 class="section-title">
+          <mat-icon>chat</mat-icon>
+          Comments ({{ t.task_comments?.length || 0 }})
+        </h3>
+
+        <!-- Comments List -->
+        <div class="comments-list">
+          <div *ngFor="let c of t.task_comments || []" class="comment-item">
+            <div class="comment-header">
+              <div class="comment-user">
+                <mat-icon class="user-icon">account_circle</mat-icon>
+                <span class="user-name">{{ c.user_name }}</span>
+                <span class="comment-time">{{ format(c.created_at) }}</span>
+              </div>
+              <div *ngIf="t.is_editable" class="comment-actions">
+                <button 
+                  *ngIf="editingCommentId() !== c.comment_id"
+                  mat-icon-button 
+                  (click)="startEditComment(c.comment_id, c.content)"
+                  matTooltip="Edit comment">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button 
+                  *ngIf="editingCommentId() !== c.comment_id"
+                  mat-icon-button 
+                  color="warn" 
+                  (click)="deleteComment(c.comment_id)"
+                  matTooltip="Delete comment">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            </div>
+
+            <!-- Edit Comment Form -->
+            <div *ngIf="editingCommentId() === c.comment_id" class="edit-comment-form">
+              <mat-form-field appearance="outline" class="form-field full-width">
+                <mat-label>Edit comment</mat-label>
+                <textarea 
+                  matInput 
+                  rows="3" 
+                  [ngModel]="editingCommentContent()" 
+                  (ngModelChange)="editingCommentContent.set($event)"
+                  maxlength="500"></textarea>
+                <mat-hint>{{ editingCommentContent().length }}/500</mat-hint>
+              </mat-form-field>
+              <div class="form-actions">
+                <button mat-button (click)="cancelEditComment()">Cancel</button>
+                <button 
+                  mat-raised-button 
+                  color="primary" 
+                  (click)="saveEditComment(c.comment_id)">
+                  <mat-icon>save</mat-icon>
+                  Save
+                </button>
+              </div>
+            </div>
+
+            <!-- Comment Content -->
+            <div *ngIf="editingCommentId() !== c.comment_id" class="comment-content">
+              <p>{{ c.content }}</p>
+            </div>
+          </div>
+
+          <div *ngIf="(t.task_comments?.length || 0) === 0" class="empty-state">
+            <span>No comments</span>
+          </div>
+        </div>
+
+        <!-- Add Comment Form -->
+        <div *ngIf="t.is_editable" class="add-comment-section">
+          <mat-form-field appearance="outline" class="form-field full-width">
+            <mat-label>Add a comment</mat-label>
+            <textarea 
+              matInput 
+              rows="3" 
+              [ngModel]="newCommentContent()" 
+              (ngModelChange)="newCommentContent.set($event)" 
+              maxlength="500" 
+              placeholder="Share your thoughts..."></textarea>
+            <mat-hint>{{ newCommentContent().length }}/500</mat-hint>
           </mat-form-field>
-          <div class="row end">
-            <button mat-raised-button color="primary" (click)="addComment()" [disabled]="!newCommentContent().trim()">
+          <div class="form-actions">
+            <button 
+              mat-raised-button 
+              color="primary" 
+              (click)="addComment()" 
+              [disabled]="!newCommentContent().trim()"
+              class="add-comment-btn">
               <mat-icon>send</mat-icon>
               Add Comment
             </button>
@@ -202,18 +422,11 @@
       </div>
     </mat-card-content>
 
-    <mat-card-actions align="end">
-      <button mat-button (click)="goBack()">
+    <!-- Card Actions -->
+    <mat-card-actions class="card-actions">
+      <button mat-button (click)="goBack()" class="back-btn">
         <mat-icon>arrow_back</mat-icon>
         Back to Project
-      </button>
-      <button mat-stroked-button color="primary" (click)="toggleEdit()" *ngIf="!editing() && t.is_editable">
-        <mat-icon>edit</mat-icon>
-        Edit
-      </button>
-      <button mat-stroked-button color="warn" (click)="deleteTask()" *ngIf="t.is_editable">
-        <mat-icon>delete</mat-icon>
-        Delete
       </button>
     </mat-card-actions>
   </mat-card>

@@ -56,15 +56,6 @@
   min-width: 120px;
 }
 
-.refresh-btn .spinning {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
 /* Status Icons */
 .status-icon {
   font-size: 16px;
@@ -82,22 +73,6 @@
 
 .status-icon.completed {
   color: #4caf50;
-}
-
-/* Loading State */
-.loading-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 20px;
-  text-align: center;
-}
-
-.loading-text {
-  margin-top: 16px;
-  color: #666;
-  font-size: 16px;
 }
 
 /* Error State */
@@ -384,8 +359,7 @@
 
 /* Accessibility */
 @media (prefers-reduced-motion: reduce) {
-  .project-card,
-  .refresh-btn .spinning {
+  .project-card {
     transition: none;
     animation: none;
   }

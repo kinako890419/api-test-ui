@@ -1,10 +1,12 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Subject, takeUntil, forkJoin } from 'rxjs';
+
+// Angular Material imports
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -13,217 +15,132 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { FormsModule } from '@angular/forms';
-import { ProjectService, ProjDetailsResp, ProjectMemberRole, TagsResp } from '../../services/project.service';
+import { DragDropModule } from '@angular/cdk/drag-drop';
+
+// Service and model imports
+import { 
+  ProjectService, 
+  ProjDetailsResp, 
+  ProjectMemberRole, 
+  TagsResp 
+} from '../../services/project.service';
 import { TaskService } from '../../services/task.service';
-import { TaskListResp, ViewAllTaskResp, TaskQuery } from '../../models/task.models';
-import type { Order } from '../../models/task.models';
+import { 
+  TaskListResp, 
+  ViewAllTaskResp, 
+  TaskQuery, 
+  Order 
+} from '../../models/task.models';
 import { ProjStatus } from '../../models/project.models';
 import { AuthService } from '../../services/auth.service';
 import { UserService, UserProfileResp } from '../../services/user.service';
+
+// Dialog component
+import { TagDetailsDialogComponent } from './tag-details-dialog.component';
+
+interface NewTaskForm {
+  task_name: string;
+  task_description: string;
+  task_status: ProjStatus | string;
+  task_deadline: string;
+}
 
 @Component({
   selector: 'app-project-detail',
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
-    MatProgressSpinnerModule,
     MatTabsModule,
     MatSnackBarModule,
     MatFormFieldModule,
     MatInputModule,
-  MatChipsModule,
-  MatSelectModule,
-  MatDatepickerModule,
-  MatNativeDateModule,
-    FormsModule,
+    MatChipsModule,
+    MatSelectModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
+    MatTooltipModule,
+    MatDialogModule,
+    DragDropModule,
   ],
   providers: [DatePipe],
   templateUrl: './project-detail.component.html',
   styleUrls: ['./project-detail.component.css']
 })
-export class ProjectDetailComponent {
-  private route = inject(ActivatedRoute);
-  private router = inject(Router);
-  private svc = inject(ProjectService);
-  private taskSvc = inject(TaskService);
-  private auth = inject(AuthService);
-  private usersSvc = inject(UserService);
-  private datePipe = inject(DatePipe);
-  private snackBar = inject(MatSnackBar);
+export class ProjectDetailComponent implements OnInit, OnDestroy {
+  // Injected services
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly projectService = inject(ProjectService);
+  private readonly taskService = inject(TaskService);
+  private readonly authService = inject(AuthService);
+  private readonly userService = inject(UserService);
+  private readonly datePipe = inject(DatePipe);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly dialog = inject(MatDialog);
+  
+  // Lifecycle management
+  private readonly destroy$ = new Subject<void>();
 
-  loading = signal(false);
-  tasksLoading = signal(false);
-  error = signal('');
-  tasksError = signal('');
-  project = signal<ProjDetailsResp | null>(null);
-  // Tasks collections by status (sorted by backend using sortBy/order)
-  pendingTasks = signal<TaskListResp[]>([]);
-  inProgressTasks = signal<TaskListResp[]>([]);
-  completedTasks = signal<TaskListResp[]>([]);
+  // State signals
+  readonly error = signal('');
+  readonly tasksError = signal('');
+  readonly project = signal<ProjDetailsResp | null>(null);
+  
+  // Task collections by status
+  readonly pendingTasks = signal<TaskListResp[]>([]);
+  readonly inProgressTasks = signal<TaskListResp[]>([]);
+  readonly completedTasks = signal<TaskListResp[]>([]);
 
-  // Sorting state for tasks
+  // Task sorting state
   taskSortBy: TaskQuery['sortBy'] = 'updatedAt';
   taskSortOrder: Order = 'desc';
+
   // Members management state
-  allUsers = signal<UserProfileResp[]>([]);
+  readonly allUsers = signal<UserProfileResp[]>([]);
   inviteUserId: number | null = null;
   inviteRole: ProjectMemberRole = 'USER';
-  savingInvite = signal(false);
-  savingRole = signal(false);
-  removingUserId = signal<number | null>(null);
+  readonly savingInvite = signal(false);
+  readonly savingRole = signal(false);
+  readonly removingUserId = signal<number | null>(null);
+
   // Task creation state
-  showNewTaskForm = signal(false);
-  savingNewTask = signal(false);
-  newTask = {
-    task_name: '',
-    task_description: '',
-    task_status: 'PENDING' as ProjStatus | string,
-    task_deadline: '', // yyyy-MM-dd
-  };
-  // Datepicker model for create-task deadline
+  readonly showNewTaskForm = signal(false);
+  readonly savingNewTask = signal(false);
+  newTask: NewTaskForm = this.getInitialTaskForm();
   deadlineDate: Date | null = null;
 
   // Tags state
-  tags = signal<TagsResp[]>([]);
-  tagsLoading = signal(false);
+  readonly tags = signal<TagsResp[]>([]);
   newTagName = '';
   editingTagId: number | null = null;
   editingTagName = '';
 
-
-  // Sorting change handler
-  onSortChange() {
-    const p = this.project();
-    if (p) this.loadTasks(p.project_id);
+  ngOnInit(): void {
+    this.initializeComponent();
   }
 
-  ngOnInit() {
-    const id = Number(this.route.snapshot.paramMap.get('id'));
-    if (!id) {
-      this.error.set('Invalid project id');
-      return;
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  // Public methods
+
+  /**
+   * Handle task sorting changes
+   */
+  onSortChange(): void {
+    const project = this.project();
+    if (project) {
+      this.loadTasks(project.project_id);
     }
-    this.loadProjectAndTasks(id);
-  }
-
-  private loadProjectAndTasks(id: number) {
-    // Load project details
-    this.loading.set(true);
-    this.svc.getById(id).subscribe({
-      next: (p) => this.project.set(p),
-      error: (err) => this.error.set(err?.error?.response_message || 'Failed to load project'),
-      complete: () => this.loading.set(false),
-    });
-
-    // Load project tasks
-    this.loadTasks(id);
-
-  // Load project tags
-  this.loadTags(id);
-
-    // Preload users to invite (optional)
-    this.usersSvc.getAll().subscribe({
-      next: (users) => {
-        const isAdmin = this.auth.currentUser()?.user_role === 'ADMIN';
-        this.allUsers.set(isAdmin ? users : users.filter(u => u.user_role !== 'ADMIN'));
-      },
-      error: () => {},
-    });
-  }
-
-  private loadTags(projectId: number) {
-    this.tagsLoading.set(true);
-    this.svc.getProjectTags(projectId).subscribe({
-      next: (resp) => this.tags.set(resp.tags || []),
-      error: (err) => this.snackBar.open(err?.error?.response_message || 'Failed to load tags', 'Close', { duration: 2500 }),
-      complete: () => this.tagsLoading.set(false),
-    });
-  }
-
-  addTag() {
-    const p = this.project();
-    const name = this.newTagName.trim();
-    if (!p || !name) return;
-    this.svc.addProjectTag(p.project_id, { tag_name: name }).subscribe({
-      next: (res) => {
-        this.snackBar.open(res.response_message || 'Tag added', 'Close', { duration: 2000 });
-        this.newTagName = '';
-        this.loadTags(p.project_id);
-      },
-      error: (err) => this.snackBar.open(err?.error?.response_message || 'Failed to add tag', 'Close', { duration: 3000 })
-    });
-  }
-
-  startEditTag(tag: TagsResp) {
-    this.editingTagId = tag.tag_id;
-    this.editingTagName = tag.tag_name;
-  }
-
-  cancelEditTag() {
-    this.editingTagId = null;
-    this.editingTagName = '';
-  }
-
-  saveEditTag(tagId: number) {
-    const p = this.project();
-    const name = this.editingTagName.trim();
-    if (!p || !name) return;
-    this.svc.editProjectTag(p.project_id, tagId, { tag_name: name }).subscribe({
-      next: (res) => {
-        this.snackBar.open(res.response_message || 'Tag updated', 'Close', { duration: 2000 });
-        this.cancelEditTag();
-        this.loadTags(p.project_id);
-      },
-      error: (err) => this.snackBar.open(err?.error?.response_message || 'Failed to update tag', 'Close', { duration: 3000 })
-    });
-  }
-
-  deleteTag(tagId: number) {
-    const p = this.project();
-    if (!p) return;
-    this.svc.deleteProjectTag(p.project_id, tagId).subscribe({
-      next: (res) => {
-        this.snackBar.open(res.response_message || 'Tag deleted', 'Close', { duration: 2000 });
-        this.loadTags(p.project_id);
-      },
-      error: (err) => this.snackBar.open(err?.error?.response_message || 'Failed to delete tag', 'Close', { duration: 3000 })
-    });
-  }
-
-  private loadTasks(projectId: number) {
-    this.tasksLoading.set(true);
-    this.tasksError.set('');
-
-  // Ask backend to sort tasks within each status using provided sortBy/order
-  const base: TaskQuery = { sortBy: this.taskSortBy, order: this.taskSortOrder };
-
-    // Use forkJoin to load all three statuses in parallel
-    // Defer import to avoid top-level changes; dynamic import pattern
-    import('rxjs').then(({ forkJoin }) => {
-      forkJoin({
-        pending: this.taskSvc.getProjectTasks(projectId, { ...base, status: 'PENDING' }),
-        inProgress: this.taskSvc.getProjectTasks(projectId, { ...base, status: 'IN_PROGRESS' }),
-        completed: this.taskSvc.getProjectTasks(projectId, { ...base, status: 'COMPLETED' }),
-      }).subscribe({
-        next: ({ pending, inProgress, completed }) => {
-          this.pendingTasks.set(pending.tasks_list || []);
-          this.inProgressTasks.set(inProgress.tasks_list || []);
-          this.completedTasks.set(completed.tasks_list || []);
-        },
-        error: (err) => {
-          const errorMessage = err?.error?.response_message || 'Failed to load tasks';
-          this.tasksError.set(errorMessage);
-          console.error('Failed to load tasks:', err);
-        },
-        complete: () => {
-          this.tasksLoading.set(false);
-        }
-      });
-    });
   }
 
   /**
@@ -237,127 +154,342 @@ export class ProjectDetailComponent {
   }
 
   /**
+   * Delete current project with confirmation
+   */
+  deleteProject(): void {
+    const project = this.project();
+    if (!project) return;
+
+    const confirmMessage = `Are you sure you want to delete project "${project.project_name}"? This action cannot be undone.`;
+    
+    if (confirm(confirmMessage)) {
+      this.projectService.delete(project.project_id)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            this.showSuccess('Project deleted successfully');
+            this.router.navigate(['/projects']);
+          },
+          error: (error) => {
+            console.error('Error deleting project:', error);
+            this.showError('Failed to delete project');
+          }
+        });
+    }
+  }
+
+  /**
+   * Invite a user to this project
+   */
+  inviteMember(): void {
+    const project = this.project();
+    if (!project || !this.inviteUserId) return;
+
+    this.savingInvite.set(true);
+    
+    this.projectService.inviteMembers(project.project_id, [{
+      user_id: this.inviteUserId,
+      user_role: this.inviteRole
+    }])
+    .pipe(takeUntil(this.destroy$))
+    .subscribe({
+      next: (response) => {
+        this.showSuccess(response.response_message || 'Member invited successfully');
+        this.refreshProjectDetails(project.project_id);
+        this.resetInviteForm();
+      },
+      error: (error) => {
+        const message = error?.error?.response_message || 'Failed to invite member';
+        this.showError(message);
+      },
+      complete: () => this.savingInvite.set(false)
+    });
+  }
+
+  /**
+   * Change member role in project
+   */
+  changeMemberRole(userId: number, newRole: ProjectMemberRole): void {
+    const project = this.project();
+    if (!project) return;
+
+    this.savingRole.set(true);
+    
+    this.projectService.setMemberRole(project.project_id, {
+      user_id: userId,
+      user_role: newRole
+    })
+    .pipe(takeUntil(this.destroy$))
+    .subscribe({
+      next: (response) => {
+        this.showSuccess(response.response_message || 'Role updated successfully');
+        this.refreshProjectDetails(project.project_id);
+      },
+      error: (error) => {
+        const message = error?.error?.response_message || 'Failed to update role';
+        this.showError(message);
+      },
+      complete: () => this.savingRole.set(false)
+    });
+  }
+
+  /**
+   * Remove member from project
+   */
+  removeMember(userId: number): void {
+    const project = this.project();
+    if (!project) return;
+
+    const currentUser = this.authService.currentUser();
+    const isLeavingProject = currentUser?.user_id === userId;
+    const confirmMessage = isLeavingProject 
+      ? 'Are you sure you want to leave this project?'
+      : 'Are you sure you want to remove this member from the project?';
+
+    if (!confirm(confirmMessage)) return;
+
+    this.removingUserId.set(userId);
+    
+    this.projectService.removeMember(project.project_id, userId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          const message = response.response_message || 
+            (isLeavingProject ? 'Left project successfully' : 'Member removed successfully');
+          this.showSuccess(message);
+          
+          if (isLeavingProject) {
+            this.router.navigate(['/projects']);
+          } else {
+            this.refreshProjectDetails(project.project_id);
+          }
+        },
+        error: (error) => {
+          const message = error?.error?.response_message || 
+            (isLeavingProject ? 'Failed to leave project' : 'Failed to remove member');
+          this.showError(message);
+        },
+        complete: () => this.removingUserId.set(null)
+      });
+  }
+
+  /**
+   * Create a new task in the project
+   */
+  createTask(): void {
+    const project = this.project();
+    if (!project || !this.isValidTaskForm()) return;
+
+    this.savingNewTask.set(true);
+    const formattedDeadline = this.datePipe.transform(this.deadlineDate, 'yyyy-MM-dd') || '';
+    
+    this.taskService.addTask(project.project_id, {
+      task_name: this.newTask.task_name.trim(),
+      task_description: this.newTask.task_description?.trim() || undefined,
+      task_status: this.newTask.task_status || undefined,
+      task_deadline: formattedDeadline,
+    })
+    .pipe(takeUntil(this.destroy$))
+    .subscribe({
+      next: (response) => {
+        this.showSuccess(response.response_message || 'Task created successfully');
+        this.resetTaskForm();
+        this.refreshTasks();
+      },
+      error: (error) => {
+        const message = error?.error?.response_message || 'Failed to create task';
+        this.showError(message);
+      },
+      complete: () => this.savingNewTask.set(false)
+    });
+  }
+
+  /**
+   * Add a new tag to the project
+   */
+  addTag(): void {
+    const project = this.project();
+    const tagName = this.newTagName.trim();
+    if (!project || !tagName) return;
+
+    this.projectService.addProjectTag(project.project_id, { tag_name: tagName })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.showSuccess(response.response_message || 'Tag added successfully');
+          this.newTagName = '';
+          this.loadTags(project.project_id);
+        },
+        error: (error) => {
+          const message = error?.error?.response_message || 'Failed to add tag';
+          this.showError(message);
+        }
+      });
+  }
+
+  /**
+   * Start editing a tag
+   */
+  startEditTag(tag: TagsResp): void {
+    this.editingTagId = tag.tag_id;
+    this.editingTagName = tag.tag_name;
+  }
+
+  /**
+   * Cancel tag editing
+   */
+  cancelEditTag(): void {
+    this.editingTagId = null;
+    this.editingTagName = '';
+  }
+
+  /**
+   * Save edited tag
+   */
+  saveEditTag(tagId: number): void {
+    const project = this.project();
+    const tagName = this.editingTagName.trim();
+    if (!project || !tagName) return;
+
+    this.projectService.editProjectTag(project.project_id, tagId, { tag_name: tagName })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.showSuccess(response.response_message || 'Tag updated successfully');
+          this.cancelEditTag();
+          this.loadTags(project.project_id);
+        },
+        error: (error) => {
+          const message = error?.error?.response_message || 'Failed to update tag';
+          this.showError(message);
+        }
+      });
+  }
+
+  /**
+   * Delete a tag
+   */
+  deleteTag(tagId: number): void {
+    const project = this.project();
+    if (!project) return;
+
+    if (!confirm('Are you sure you want to delete this tag?')) return;
+
+    this.projectService.deleteProjectTag(project.project_id, tagId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.showSuccess(response.response_message || 'Tag deleted successfully');
+          this.loadTags(project.project_id);
+        },
+        error: (error) => {
+          const message = error?.error?.response_message || 'Failed to delete tag';
+          this.showError(message);
+        }
+      });
+  }
+
+  /**
+   * Show tag details in a dialog
+   */
+  showTagDetails(tag: TagsResp): void {
+    this.dialog.open(TagDetailsDialogComponent, {
+      width: '500px',
+      data: tag
+    });
+  }
+
+  /**
+   * Open task detail page
+   */
+  openTask(task: TaskListResp): void {
+    const project = this.project();
+    if (project && task.task_id) {
+      this.router.navigate(['/projects', project.project_id, 'tasks', task.task_id]);
+    }
+  }
+
+  /**
+   * Refresh tasks data
+   */
+  refreshTasks(): void {
+    const project = this.project();
+    if (project) {
+      this.loadTasks(project.project_id);
+    }
+  }
+
+  /**
+   * Go back to projects list
+   */
+  goBack(): void {
+    this.router.navigate(['/projects']);
+  }
+
+  // Permission checking methods
+
+  /**
    * Check if current user can edit this project
    */
   canEditProject(): boolean {
     const project = this.project();
-    const currentUser = this.auth.currentUser();
+    const currentUser = this.authService.currentUser();
 
-    if (!project || !currentUser) {
-      return false;
-    }
+    if (!project || !currentUser) return false;
 
-    // User can edit if they are the creator or have OWNER role
     const isCreator = project.creator_id === currentUser.user_id;
     const isOwner = project.member_list?.some(
-      member => member.user_id === currentUser.user_id && member.user_project_role === 'OWNER'
+      member => member.user_id === currentUser.user_id && 
+                member.user_project_role === 'OWNER'
     );
 
     return isCreator || !!isOwner;
   }
 
   /**
-   * Invite a user to this project
+   * Check if current user can manage members
    */
-  inviteMember() {
-    const p = this.project();
-    if (!p || !this.inviteUserId) return;
-    this.savingInvite.set(true);
-    this.svc.inviteMembers(p.project_id, [{ user_id: this.inviteUserId, user_role: this.inviteRole }]).subscribe({
-      next: (res) => {
-        this.snackBar.open(res.response_message || 'Member invited', 'Close', { duration: 2500 });
-        // refresh project members
-        this.svc.getById(p.project_id).subscribe({ next: (proj) => this.project.set(proj) });
-        // reset form
-        this.inviteUserId = null;
-        this.inviteRole = 'USER';
-      },
-      error: (err) => {
-        const msg = err?.error?.response_message || 'Failed to invite member';
-        this.snackBar.open(msg, 'Close', { duration: 3000 });
-      },
-      complete: () => this.savingInvite.set(false)
-    });
-  }
-
   canManageMembers(): boolean {
     return this.canEditProject();
   }
 
-  /** Update project role of a member */
-  changeMemberRole(userId: number, newRole: ProjectMemberRole) {
-    const p = this.project();
-    if (!p) return;
-    this.savingRole.set(true);
-    this.svc.setMemberRole(p.project_id, { user_id: userId, user_role: newRole }).subscribe({
-      next: (res) => {
-        this.snackBar.open(res.response_message || 'Role updated', 'Close', { duration: 2500 });
-        this.svc.getById(p.project_id).subscribe({ next: (proj) => this.project.set(proj) });
-      },
-      error: (err) => {
-        const msg = err?.error?.response_message || 'Failed to update role';
-        this.snackBar.open(msg, 'Close', { duration: 3000 });
-      },
-      complete: () => this.savingRole.set(false)
-    });
-  }
-
-  /** Remove user from project (or leave) */
-  removeMember(userId: number) {
-    const p = this.project();
-    if (!p) return;
-    this.removingUserId.set(userId);
-    this.svc.removeMember(p.project_id, userId).subscribe({
-      next: (res) => {
-        this.snackBar.open(res.response_message || 'Member removed', 'Close', { duration: 2500 });
-        this.svc.getById(p.project_id).subscribe({ next: (proj) => this.project.set(proj) });
-      },
-      error: (err) => {
-        const msg = err?.error?.response_message || 'Failed to remove member';
-        this.snackBar.open(msg, 'Close', { duration: 3000 });
-      },
-      complete: () => this.removingUserId.set(null)
-    });
-  }
-
-  /** Can the current user create tasks in this project */
+  /**
+   * Check if current user can create tasks
+   */
   canCreateTask(): boolean {
-    const p = this.project();
-    const user = this.auth.currentUser();
-    if (!p || !user) return false;
-    const isMember = !!p.member_list?.some(m => m.user_id === user.user_id);
-    const notCompleted = p.project_status !== 'COMPLETED';
+    const project = this.project();
+    const currentUser = this.authService.currentUser();
+    
+    if (!project || !currentUser) return false;
+    
+    const isMember = !!project.member_list?.some(m => m.user_id === currentUser.user_id);
+    const notCompleted = project.project_status !== 'COMPLETED';
+    
     return isMember && notCompleted;
   }
 
-  /** Create a new task in the project */
-  createTask() {
-    const p = this.project();
-    if (!p) return;
-    const { task_name } = this.newTask;
-    if (!task_name?.trim() || !this.deadlineDate) {
-      this.snackBar.open('Task name and deadline are required', 'Close', { duration: 2500 });
-      return;
-    }
-    this.savingNewTask.set(true);
-    const formattedDeadline = this.datePipe.transform(this.deadlineDate, 'yyyy-MM-dd') || '';
-    this.taskSvc.addTask(p.project_id, {
-      task_name: task_name.trim(),
-      task_description: this.newTask.task_description?.trim() || undefined,
-      task_status: this.newTask.task_status || undefined,
-      task_deadline: formattedDeadline,
-    }).subscribe({
-      next: (res) => {
-        this.snackBar.open(res.response_message || 'Task created', 'Close', { duration: 2500 });
-        // reset form
-        this.newTask = { task_name: '', task_description: '', task_status: 'PENDING', task_deadline: '' };
-        this.deadlineDate = null;
-        this.showNewTaskForm.set(false);
-        this.refreshTasks();
-      },
-      error: (err) => this.snackBar.open(err?.error?.response_message || 'Failed to create task', 'Close', { duration: 3000 }),
-      complete: () => this.savingNewTask.set(false)
-    });
+  /**
+   * Check if user can leave project
+   */
+  canLeaveMember(memberUserId: number): boolean {
+    const project = this.project();
+    const currentUser = this.authService.currentUser();
+    
+    if (!project || !currentUser) return false;
+    
+    return currentUser.user_id === memberUserId && 
+           currentUser.user_id !== project.creator_id;
+  }
+
+  // Utility methods
+
+  /**
+   * Check if user is already a member
+   */
+  isAlreadyMember(userId: number | null | undefined): boolean {
+    if (!userId) return false;
+    const project = this.project();
+    return !!project?.member_list?.some(m => m.user_id === userId);
   }
 
   /**
@@ -382,25 +514,9 @@ export class ProjectDetailComponent {
   }
 
   /**
-   * Format date for display
+   * Get project status icon
    */
-  formatDate(dateString: string | null | undefined): string {
-    if (!dateString) {
-      return 'N/A';
-    }
-
-    try {
-      const formatted = this.datePipe.transform(dateString, 'MMM d, y');
-      return formatted || 'Invalid date';
-    } catch {
-      return 'Invalid date';
-    }
-  }
-
-  /**
-   * Get status icon for tasks
-   */
-  getTaskStatusIcon(status: ProjStatus | null | undefined): string {
+  getProjectStatusIcon(status: ProjStatus | null | undefined): string {
     switch (status) {
       case 'PENDING':
         return 'schedule';
@@ -414,97 +530,251 @@ export class ProjectDetailComponent {
   }
 
   /**
-   * Get status class for tasks
+   * Format date for display
    */
-  getTaskStatusClass(status: ProjStatus | null | undefined): string {
-    switch (status) {
-      case 'PENDING':
-        return 'pending';
-      case 'IN_PROGRESS':
-        return 'in-progress';
-      case 'COMPLETED':
-        return 'completed';
-      default:
-        return 'default';
+  formatDate(dateString: string | null | undefined): string {
+    if (!dateString) return 'N/A';
+
+    try {
+      const formatted = this.datePipe.transform(dateString, 'MMM d, y');
+      return formatted || 'Invalid date';
+    } catch {
+      return 'Invalid date';
     }
   }
 
+  // TrackBy functions for performance optimization
+
   /**
-   * Get status label for tasks
+   * TrackBy function for member list
    */
-  getTaskStatusLabel(status: ProjStatus | null | undefined): string {
-    switch (status) {
-      case 'PENDING':
-        return 'Pending';
-      case 'IN_PROGRESS':
-        return 'In Progress';
-      case 'COMPLETED':
-        return 'Completed';
-      default:
-        return 'Unknown';
+  trackByMemberId(index: number, member: any): number {
+    return member?.user_id || index;
+  }
+
+  /**
+   * TrackBy function for tags list
+   */
+  trackByTagId(index: number, tag: TagsResp): number {
+    return tag?.tag_id || index;
+  }
+
+  /**
+   * TrackBy function for tasks list
+   */
+  trackByTaskId(index: number, task: TaskListResp): number {
+    return task?.task_id || index;
+  }
+
+  // Private methods
+
+  /**
+   * Initialize the component
+   */
+  private initializeComponent(): void {
+    const projectId = this.getProjectIdFromRoute();
+    if (!projectId) {
+      this.error.set('Invalid project ID');
+      return;
     }
-  }
 
-  // Helpers for template
-  isAlreadyMember(userId: number | null | undefined): boolean {
-    if (!userId) return false;
-    const p = this.project();
-    return !!p?.member_list?.some(m => m.user_id === userId);
-  }
-
-  canLeaveMember(memberUserId: number): boolean {
-    const p = this.project();
-    const currentUser = this.auth.currentUser();
-    if (!p || !currentUser) return false;
-    // cannot leave if creator, and only for self
-    return currentUser.user_id === memberUserId && currentUser.user_id !== p.creator_id;
+    this.loadProjectAndRelatedData(projectId);
   }
 
   /**
-   * Navigate to task detail (placeholder for future implementation)
+   * Get project ID from route parameters
    */
-  openTask(task: TaskListResp) {
-    const project = this.project();
-    if (project && task.task_id) {
-  this.router.navigate(['/projects', project.project_id, 'tasks', task.task_id]);
-    }
+  private getProjectIdFromRoute(): number | null {
+    const id = Number(this.route.snapshot.paramMap.get('id'));
+    return id || null;
   }
 
   /**
-   * Refresh tasks data
+   * Load project and all related data
    */
-  refreshTasks() {
-    const project = this.project();
-    if (project) {
-      this.loadTasks(project.project_id);
-    }
-  }
+  private loadProjectAndRelatedData(projectId: number): void {
+    this.error.set('');
 
-  /**
-   * Delete current project with confirmation
-   */
-  deleteProject(): void {
-    const project = this.project();
-    if (!project) return;
-
-    if (confirm(`Are you sure you want to delete project "${project.project_name}"?`)) {
-      this.svc.delete(project.project_id).subscribe({
-        next: () => {
-          this.snackBar.open('Project deleted successfully', 'Close', { duration: 3000 });
-          this.router.navigate(['/projects']);
+    // Load project details
+    this.projectService.getById(projectId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (project) => {
+          this.project.set(project);
         },
         error: (error) => {
-          console.error('Error deleting project:', error);
-          this.snackBar.open('Failed to delete project', 'Close', { duration: 3000 });
+          const message = error?.error?.response_message || 'Failed to load project';
+          this.error.set(message);
         }
       });
-    }
+
+    // Load tasks, tags, and users concurrently
+    this.loadTasks(projectId);
+    this.loadTags(projectId);
+    this.loadUsers();
   }
 
   /**
-   * Go back to projects list
+   * Load project tasks by status
    */
-  goBack(): void {
-    this.router.navigate(['/projects']);
+  private loadTasks(projectId: number): void {
+    this.tasksError.set('');
+
+    const baseQuery: TaskQuery = {
+      sortBy: this.taskSortBy,
+      order: this.taskSortOrder
+    };
+
+    forkJoin({
+      pending: this.taskService.getProjectTasks(projectId, {
+        ...baseQuery,
+        status: 'PENDING'
+      }),
+      inProgress: this.taskService.getProjectTasks(projectId, {
+        ...baseQuery,
+        status: 'IN_PROGRESS'
+      }),
+      completed: this.taskService.getProjectTasks(projectId, {
+        ...baseQuery,
+        status: 'COMPLETED'
+      }),
+    })
+    .pipe(takeUntil(this.destroy$))
+    .subscribe({
+      next: ({ pending, inProgress, completed }) => {
+        this.pendingTasks.set(pending.tasks_list || []);
+        this.inProgressTasks.set(inProgress.tasks_list || []);
+        this.completedTasks.set(completed.tasks_list || []);
+      },
+      error: (error) => {
+        const message = error?.error?.response_message || 'Failed to load tasks';
+        this.tasksError.set(message);
+        console.error('Failed to load tasks:', error);
+      }
+    });
+  }
+
+  /**
+   * Load project tags
+   */
+  private loadTags(projectId: number): void {
+    this.projectService.getProjectTags(projectId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.tags.set(response.tags || []);
+        },
+        error: (error) => {
+          const message = error?.error?.response_message || 'Failed to load tags';
+          this.showError(message);
+        }
+      });
+  }
+
+  /**
+   * Load all users for invitation
+   */
+  private loadUsers(): void {
+    this.userService.getAll()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (users) => {
+          const currentUser = this.authService.currentUser();
+          const isAdmin = currentUser?.user_role === 'ADMIN';
+          
+          // Filter out admin users if current user is not admin
+          const filteredUsers = isAdmin 
+            ? users 
+            : users.filter(u => u.user_role !== 'ADMIN');
+            
+          this.allUsers.set(filteredUsers);
+        },
+        error: (error) => {
+          console.error('Failed to load users:', error);
+          // Not showing error to user as this is optional for invitation feature
+        }
+      });
+  }
+
+  /**
+   * Refresh project details
+   */
+  private refreshProjectDetails(projectId: number): void {
+    this.projectService.getById(projectId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (project) => this.project.set(project),
+        error: (error) => {
+          console.error('Failed to refresh project details:', error);
+        }
+      });
+  }
+
+  /**
+   * Get initial task form state
+   */
+  private getInitialTaskForm(): NewTaskForm {
+    return {
+      task_name: '',
+      task_description: '',
+      task_status: 'PENDING',
+      task_deadline: '',
+    };
+  }
+
+  /**
+   * Reset task form to initial state
+   */
+  private resetTaskForm(): void {
+    this.newTask = this.getInitialTaskForm();
+    this.deadlineDate = null;
+    this.showNewTaskForm.set(false);
+  }
+
+  /**
+   * Reset invite form to initial state
+   */
+  private resetInviteForm(): void {
+    this.inviteUserId = null;
+    this.inviteRole = 'USER';
+  }
+
+  /**
+   * Validate task form before submission
+   */
+  private isValidTaskForm(): boolean {
+    const { task_name } = this.newTask;
+    
+    if (!task_name?.trim()) {
+      this.showError('Task name is required');
+      return false;
+    }
+
+    if (!this.deadlineDate) {
+      this.showError('Task deadline is required');
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Show success message
+   */
+  private showSuccess(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 3000,
+      panelClass: ['success-snackbar']
+    });
+  }
+
+  /**
+   * Show error message
+   */
+  private showError(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 4000,
+      panelClass: ['error-snackbar']
+    });
   }
 }

@@ -1,22 +1,16 @@
 <div class="edit-project-container">
-  <!-- Loading State -->
-  <div *ngIf="loading()" class="loading-container">
-    <mat-spinner diameter="40"></mat-spinner>
-    <p class="loading-text">Loading project details...</p>
-  </div>
-
   <!-- Error State -->
-  <div *ngIf="error() && !loading()" class="error-container">
+  <div *ngIf="error()" class="error-container">
     <mat-icon class="error-icon">error_outline</mat-icon>
     <p class="error-message">{{ error() }}</p>
-    <button mat-stroked-button color="warn" (click)="onCancel()">
+    <button mat-raised-button color="primary" (click)="onCancel()">
       <mat-icon>arrow_back</mat-icon>
-      Go Back
+      Back to Projects
     </button>
   </div>
 
   <!-- Edit Form -->
-  <mat-card *ngIf="!loading() && !error() && project()" class="edit-form-card">
+  <mat-card *ngIf="!error() && project()" class="edit-form-card">
     <mat-card-header>
       <div mat-card-avatar class="edit-avatar">
         <mat-icon>edit</mat-icon>
@@ -101,8 +95,7 @@
             color="primary"
             [disabled]="form.invalid || saving()"
           >
-            <mat-icon *ngIf="!saving()">save</mat-icon>
-            <mat-spinner *ngIf="saving()" diameter="20"></mat-spinner>
+            <mat-icon>save</mat-icon>
             {{ saving() ? 'Saving...' : 'Save Changes' }}
           </button>
         </div>

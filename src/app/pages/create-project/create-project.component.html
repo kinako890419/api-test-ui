@@ -85,8 +85,7 @@
             color="primary"
             [disabled]="form.invalid || saving()"
           >
-            <mat-icon *ngIf="!saving()">add</mat-icon>
-            <mat-spinner *ngIf="saving()" diameter="20"></mat-spinner>
+            <mat-icon>add</mat-icon>
             {{ saving() ? 'Creating...' : 'Create Project' }}
           </button>
         </div>

@@ -62,10 +62,9 @@
             color="primary"
             type="submit"
             class="login-button"
-            [disabled]="loading || form.invalid">
-            <mat-icon *ngIf="!loading">login</mat-icon>
-            <mat-spinner *ngIf="loading" diameter="20"></mat-spinner>
-            <span>{{ loading ? 'Signing in...' : 'Sign In' }}</span>
+            [disabled]="form.invalid">
+            <mat-icon>login</mat-icon>
+            <span>Sign In</span>
           </button>
         </div>
 

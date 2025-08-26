@@ -106,10 +106,6 @@ mat-card-content {
   cursor: not-allowed;
 }
 
-.login-button mat-spinner {
-  margin-right: 0.5rem;
-}
-
 .login-button mat-icon {
   margin-right: 0.5rem;
 }
@@ -167,11 +163,6 @@ mat-card-content {
 
 .mat-mdc-form-field-focus-overlay {
   background-color: transparent;
-}
-
-/* Loading State */
-.login-button[disabled] mat-spinner {
-  --mdc-circular-progress-active-indicator-color: currentColor;
 }
 
 /* Focus States */

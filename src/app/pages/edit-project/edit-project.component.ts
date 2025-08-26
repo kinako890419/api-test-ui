@@ -8,7 +8,6 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ProjectService, ProjDetailsResp, EditProjectReq } from '../../services/project.service';
 import { ProjStatus } from '../../models/project.models';
@@ -25,7 +24,6 @@ import { ProjStatus } from '../../models/project.models';
     MatSelectModule,
     MatButtonModule,
     MatIconModule,
-    MatProgressSpinnerModule,
     MatSnackBarModule,
   ],
   templateUrl: './edit-project.component.html',
@@ -39,7 +37,6 @@ export class EditProjectComponent {
   private readonly snackBar = inject(MatSnackBar);
 
   // State signals
-  readonly loading = signal<boolean>(false);
   readonly saving = signal<boolean>(false);
   readonly error = signal<string>('');
   readonly project = signal<ProjDetailsResp | null>(null);
@@ -79,7 +76,6 @@ export class EditProjectComponent {
    * Load project details and populate form
    */
   private loadProject(id: number): void {
-    this.loading.set(true);
     this.error.set('');
 
     this.projectService.getById(id).subscribe({
@@ -105,9 +101,6 @@ export class EditProjectComponent {
                            'Failed to load project details';
         this.error.set(errorMessage);
         console.error('Failed to load project:', err);
-      },
-      complete: () => {
-        this.loading.set(false);
       }
     });
   }

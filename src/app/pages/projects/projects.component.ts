@@ -7,7 +7,6 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -29,7 +28,6 @@ import { AuthService } from '../../services/auth.service';
     MatSelectModule,
     MatButtonModule,
     MatIconModule,
-    MatProgressSpinnerModule,
     MatPaginatorModule,
     MatMenuModule,
     MatSnackBarModule,
@@ -48,7 +46,6 @@ export class ProjectsComponent implements OnInit, OnDestroy {
   private readonly dialog = inject(MatDialog);
 
   // UI State Signals
-  readonly loading = signal<boolean>(false);
   readonly error = signal<string>('');
   readonly items = signal<ProjDetailsResp[]>([]);
   readonly totalItems = signal<number>(0);
@@ -90,7 +87,6 @@ export class ProjectsComponent implements OnInit, OnDestroy {
    * Load projects from the service
    */
   load(): void {
-    this.loading.set(true);
     this.error.set('');
 
     const query: ProjectQuery = {
@@ -135,9 +131,6 @@ export class ProjectsComponent implements OnInit, OnDestroy {
                            'Failed to load projects. Please try again.';
         this.error.set(errorMessage);
         console.error('Failed to load projects:', err);
-      },
-      complete: () => {
-        this.loading.set(false);
       }
     });
   }

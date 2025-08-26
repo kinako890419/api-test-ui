@@ -11,7 +11,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 // Services and Models
 import { AuthService } from '../../services/auth.service';
@@ -29,14 +28,12 @@ import { FailResponse, LoginSuccess, LoginRequest } from '../../models/auth.mode
     MatInputModule,
     MatButtonModule,
     MatIconModule,
-    MatProgressSpinnerModule,
   ],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css']
 })
 export class LoginComponent implements OnInit, OnDestroy {
   form!: FormGroup;
-  loading = false;
   errorMsg = '';
   hidePassword = true;
   private loginSubscription?: Subscription;
@@ -99,13 +96,9 @@ export class LoginComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.startLoading();
     const loginRequest: LoginRequest = this.form.value;
 
     this.loginSubscription = this.authService.login(loginRequest)
-      .pipe(
-        finalize(() => this.stopLoading())
-      )
       .subscribe({
         next: (response) => this.handleLoginResponse(response),
         error: (error) => this.handleLoginError(error)
@@ -164,21 +157,6 @@ export class LoginComponent implements OnInit, OnDestroy {
     Object.keys(this.form.controls).forEach(key => {
       this.form.get(key)?.markAsTouched();
     });
-  }
-
-  /**
-   * Start loading state
-   */
-  private startLoading(): void {
-    this.loading = true;
-    this.errorMsg = '';
-  }
-
-  /**
-   * Stop loading state
-   */
-  private stopLoading(): void {
-    this.loading = false;
   }
 
   /**

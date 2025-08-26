@@ -7,7 +7,6 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { FormsModule } from '@angular/forms';
 import { UserService, UserProfileResp } from '../../services/user.service';
 import { AuthService } from '../../services/auth.service';
@@ -24,7 +23,6 @@ import { AuthService } from '../../services/auth.service';
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
-  MatProgressSpinnerModule,
     FormsModule,
   ],
   templateUrl: './admin-users.component.html',
@@ -35,7 +33,6 @@ export class AdminUsersComponent {
   private auth = inject(AuthService);
   private snack = inject(MatSnackBar);
 
-  loading = signal(false);
   error = signal('');
   users = signal<UserProfileResp[]>([]);
   // Toggle to view deleted users (read-only)
@@ -51,12 +48,10 @@ export class AdminUsersComponent {
   }
 
   refresh() {
-    this.loading.set(true);
     const isDeletedParam = this.viewDeleted() ? 'true' : undefined;
     this.usersSvc.getAll(isDeletedParam).subscribe({
       next: (u) => this.users.set(u),
-      error: (err) => this.error.set(err?.error?.response_message || 'Failed to load users'),
-      complete: () => this.loading.set(false)
+      error: (err) => this.error.set(err?.error?.response_message || 'Failed to load users')
     });
   }
 

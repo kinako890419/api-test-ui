@@ -75,19 +75,12 @@
         mat-raised-button
         color="primary"
         (click)="load()"
-        [disabled]="loading()"
         class="refresh-btn"
       >
-        <mat-icon [class.spinning]="loading()">refresh</mat-icon>
+        <mat-icon>refresh</mat-icon>
         Refresh
       </button>
     </div> -->
-  </div>
-
-  <!-- Loading State -->
-  <div *ngIf="loading()" class="loading-container">
-    <mat-spinner diameter="40"></mat-spinner>
-    <p class="loading-text">Loading projects...</p>
   </div>
 
   <!-- Error State -->
@@ -101,7 +94,7 @@
   </div>
 
   <!-- Results Info -->
-  <!-- <div class="results-info" *ngIf="!loading() && !error()">
+  <div class="results-info" *ngIf="!error()">
     <mat-form-field appearance="outline" class="page-size-field">
       <mat-label>Items per page</mat-label>
       <mat-select [ngModel]="pageSize()" (ngModelChange)="changePageSize($event)">
@@ -112,10 +105,10 @@
         <mat-option value="50">50</mat-option>
       </mat-select>
     </mat-form-field>
-  </div> -->
+  </div>
 
   <!-- Projects Grid -->
-  <div class="projects-grid" *ngIf="!loading() && !error()">
+  <div class="projects-grid" *ngIf="!error()">
     <mat-card
       class="project-card"
       *ngFor="let project of items(); trackBy: trackByProjectId"
@@ -192,7 +185,7 @@
   </div>
 
   <!-- Pagination -->
-  <div class="pagination-container" *ngIf="!loading() && !error() && totalItems() > 0">
+  <div class="pagination-container" *ngIf="!error() && totalItems() > 0">
     <mat-paginator
       [length]="totalItems()"
       [pageSize]="pageSize()"

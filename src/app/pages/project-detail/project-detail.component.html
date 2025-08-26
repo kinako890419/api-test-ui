@@ -1,404 +1,582 @@
 <div class="project-detail-container">
-  <!-- Loading State -->
-  <div *ngIf="loading()" class="center">
-    <mat-spinner diameter="32"></mat-spinner>
-    <p class="loading-text">Loading project details...</p>
-  </div>
-
   <!-- Error State -->
-  <div *ngIf="error()" class="error">
-    {{ error() }}
-    <button mat-stroked-button color="warn" (click)="goBack()" class="back-button">
+  <div *ngIf="error()" class="error-state">
+    <mat-icon class="error-icon">error_outline</mat-icon>
+    <h3>Something went wrong</h3>
+    <p>{{ error() }}</p>
+    <button mat-raised-button color="primary" (click)="goBack()">
       <mat-icon>arrow_back</mat-icon>
       Back to Projects
     </button>
   </div>
 
   <!-- Project Details -->
-  <mat-card *ngIf="!loading() && !error() && project() as p" class="project-info-card">
-    <mat-card-header>
-      <mat-card-title>{{ p.project_name }}</mat-card-title>
-      <mat-card-subtitle>
-        <mat-icon class="status-icon" [ngClass]="p.project_status?.toLowerCase()">
-          {{ p.project_status === 'PENDING' ? 'schedule' :
-             p.project_status === 'IN_PROGRESS' ? 'work' :
-             p.project_status === 'COMPLETED' ? 'check_circle' : 'help_outline' }}
-        </mat-icon>
-        {{ p.project_status || 'N/A' }}
-      </mat-card-subtitle>
-    </mat-card-header>
-
-    <mat-card-content>
-      <p class="desc">{{ p.project_description || 'No description' }}</p>
-      <div class="meta small">
-        <span><mat-icon>access_time</mat-icon> Created: {{ formatDate(p.project_created_time) }}</span>
-        <span *ngIf="p.project_updated_time"><mat-icon>update</mat-icon> Updated: {{ formatDate(p.project_updated_time) }}</span>
-      </div>
-
-      <h3>Members ({{ p.member_list?.length || 0 }})</h3>
-  <div *ngIf="canManageMembers() && p.project_status !== 'COMPLETED'" class="invite-form">
-        <mat-form-field appearance="outline" class="invite-field">
-          <mat-label>Select user to invite</mat-label>
-          <mat-select [(ngModel)]="inviteUserId">
-            <mat-option [value]="null">-- Select --</mat-option>
-            <mat-option
-              *ngFor="let u of allUsers()"
-              [value]="u.user_id"
-              [disabled]="isAlreadyMember(u.user_id)"
-            >
-              {{ u.user_name }} ({{ u.user_email }})
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="invite-field small">
-          <mat-label>Role</mat-label>
-          <mat-select [(ngModel)]="inviteRole">
-            <mat-option value="USER">USER</mat-option>
-            <mat-option value="OWNER">OWNER</mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <button mat-raised-button color="primary" (click)="inviteMember()" [disabled]="!inviteUserId || savingInvite()">
-          <mat-icon>person_add</mat-icon>
-          Invite
-        </button>
-      </div>
-
-      <ul class="members-list">
-        <li *ngFor="let m of p.member_list || []" class="member-item">
-          <mat-icon class="member-icon">person</mat-icon>
-          <div class="member-info">
-            <div class="member-name">{{ m.user_name }}</div>
-            <div class="member-role">{{ m.user_project_role }}</div>
-            <div class="member-email">{{ m.user_email }}</div>
+  <ng-container *ngIf="!error() && project() as p">
+    <!-- Project Header Card -->
+    <mat-card class="project-header-card" appearance="outlined">
+      <mat-card-header>
+        <div mat-card-avatar class="project-avatar">
+          <mat-icon>work</mat-icon>
+        </div>
+        <mat-card-title>{{ p.project_name }}</mat-card-title>
+        <mat-card-subtitle>
+          <div class="status-badge" [ngClass]="'status-' + (p.project_status?.toLowerCase() || 'unknown')">
+            <mat-icon>{{ getProjectStatusIcon(p.project_status) }}</mat-icon>
+            <span>{{ p.project_status || 'N/A' }}</span>
           </div>
+        </mat-card-subtitle>
+      </mat-card-header>
 
-          <div class="member-actions">
-            <ng-container *ngIf="canManageMembers(); else selfLeave">
-              <mat-form-field appearance="outline" class="role-field">
-                <mat-label>Set role</mat-label>
-                <mat-select
-                  [ngModel]="m.user_project_role"
-                  (ngModelChange)="changeMemberRole(m.user_id, $event)"
-                  [disabled]="savingRole() || m.user_id === p.creator_id"
-                >
-                  <mat-option value="USER">USER</mat-option>
-                  <mat-option value="OWNER">OWNER</mat-option>
+      <mat-card-content>
+        <div class="project-description">
+          <p>{{ p.project_description || 'No description available' }}</p>
+        </div>
+        
+        <div class="project-metadata">
+          <div class="meta-item">
+            <mat-icon>access_time</mat-icon>
+            <span>Created {{ formatDate(p.project_created_time) }}</span>
+          </div>
+          <div *ngIf="p.project_updated_time" class="meta-item">
+            <mat-icon>update</mat-icon>
+            <span>Updated {{ formatDate(p.project_updated_time) }}</span>
+          </div>
+        </div>
+      </mat-card-content>
+
+      <mat-card-actions align="end">
+        <button mat-button (click)="goBack()">
+          <mat-icon>arrow_back</mat-icon>
+          Back
+        </button>
+        <button
+          mat-button
+          color="warn"
+          (click)="deleteProject()"
+          *ngIf="canEditProject()"
+          [matTooltip]="'Delete project'"
+        >
+          <mat-icon>delete</mat-icon>
+          Delete
+        </button>
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="editProject()"
+          *ngIf="canEditProject()"
+          [matTooltip]="getEditTooltip()"
+        >
+          <mat-icon>edit</mat-icon>
+          {{ getEditButtonText() }}
+        </button>
+      </mat-card-actions>
+    </mat-card>
+
+    <!-- Members and Tags Row -->
+    <div class="members-tags-row">
+      <!-- Members Section -->
+      <mat-card class="members-card" appearance="outlined">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>group</mat-icon>
+            Members
+            <mat-chip-set>
+              <mat-chip>{{ p.member_list?.length || 0 }}</mat-chip>
+            </mat-chip-set>
+          </mat-card-title>
+        </mat-card-header>
+
+        <mat-card-content>
+          <!-- Invite Form -->
+          <div *ngIf="canManageMembers() && p.project_status !== 'COMPLETED'" class="invite-section">
+            <h4>Invite Members</h4>
+            <div class="invite-form">
+              <mat-form-field appearance="outline" class="invite-user-field">
+                <mat-label>Select user to invite</mat-label>
+                <mat-select [(ngModel)]="inviteUserId">
+                  <mat-option [value]="null">-- Select User --</mat-option>
+                  <mat-option
+                    *ngFor="let u of allUsers()"
+                    [value]="u.user_id"
+                    [disabled]="isAlreadyMember(u.user_id)"
+                  >
+                    <div class="user-option">
+                      <span class="user-name">{{ u.user_name }}</span>
+                      <span class="user-email">({{ u.user_email }})</span>
+                    </div>
+                  </mat-option>
                 </mat-select>
               </mat-form-field>
 
-              <button
-                mat-stroked-button color="warn"
-                (click)="removeMember(m.user_id)"
-                [disabled]="removingUserId() === m.user_id || m.user_id === p.creator_id"
-                title="Remove member"
+              <mat-form-field appearance="outline" class="invite-role-field">
+                <mat-label>Role</mat-label>
+                <mat-select [(ngModel)]="inviteRole">
+                  <mat-option value="USER">
+                    <mat-icon>person</mat-icon>
+                    User
+                  </mat-option>
+                  <mat-option value="OWNER">
+                    <mat-icon>admin_panel_settings</mat-icon>
+                    Owner
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <button 
+                mat-raised-button 
+                color="primary" 
+                (click)="inviteMember()" 
+                [disabled]="!inviteUserId || savingInvite()"
+                class="invite-button"
               >
-                <mat-icon>person_remove</mat-icon>
-                Remove
+                <mat-icon>person_add</mat-icon>
+                {{ savingInvite() ? 'Inviting...' : 'Invite' }}
               </button>
-            </ng-container>
-            <ng-template #selfLeave>
-              <button
-                mat-stroked-button color="warn"
-                *ngIf="canLeaveMember(m.user_id)"
-                (click)="removeMember(m.user_id)"
-                [disabled]="removingUserId() === m.user_id"
-                title="Leave project"
-              >
-                <mat-icon>logout</mat-icon>
-                Leave
-              </button>
-            </ng-template>
+            </div>
           </div>
-        </li>
-      </ul>
 
-      <div *ngIf="(p.member_list?.length || 0) === 0" class="no-members">
-        <mat-icon>group_off</mat-icon>
-        <span>No members assigned to this project</span>
-      </div>
+          <!-- Members List -->
+          <div class="members-list">
+            <div *ngFor="let m of p.member_list || []; trackBy: trackByMemberId" class="member-item">
+              <div class="member-avatar">
+                <mat-icon>account_circle</mat-icon>
+              </div>
+              
+              <div class="member-info">
+                <div class="member-name">
+                  {{ m.user_name }}
+                  <mat-chip 
+                    *ngIf="m.user_id === p.creator_id" 
+                    class="creator-chip"
+                    color="accent"
+                  >
+                    Creator
+                  </mat-chip>
+                </div>
+                <div class="member-role">{{ m.user_project_role }}</div>
+                <div class="member-email">{{ m.user_email }}</div>
+              </div>
 
-      <h3>Tags</h3>
-      <div class="tags-section">
-        <div class="add-tag" *ngIf="p.project_status !== 'COMPLETED'">
+              <div class="member-actions">
+                <ng-container *ngIf="canManageMembers(); else selfLeave">
+                  <mat-form-field appearance="outline" class="role-select">
+                    <mat-label>Role</mat-label>
+                    <mat-select
+                      [ngModel]="m.user_project_role"
+                      (ngModelChange)="changeMemberRole(m.user_id, $event)"
+                      [disabled]="savingRole() || m.user_id === p.creator_id"
+                    >
+                      <mat-option value="USER">User</mat-option>
+                      <mat-option value="OWNER">Owner</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+
+                  <button
+                    mat-icon-button
+                    color="warn"
+                    (click)="removeMember(m.user_id)"
+                    [disabled]="removingUserId() === m.user_id || m.user_id === p.creator_id"
+                    [matTooltip]="'Remove member'"
+                  >
+                    <mat-icon>person_remove</mat-icon>
+                  </button>
+                </ng-container>
+                
+                <ng-template #selfLeave>
+                  <button
+                    mat-stroked-button
+                    color="warn"
+                    *ngIf="canLeaveMember(m.user_id)"
+                    (click)="removeMember(m.user_id)"
+                    [disabled]="removingUserId() === m.user_id"
+                    [matTooltip]="'Leave project'"
+                  >
+                    <mat-icon>logout</mat-icon>
+                    Leave
+                  </button>
+                </ng-template>
+              </div>
+            </div>
+
+            <div *ngIf="(p.member_list?.length || 0) === 0" class="empty-state">
+              <mat-icon>group_off</mat-icon>
+              <span>No members assigned to this project</span>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Tags Section -->
+      <mat-card class="tags-card" appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>label</mat-icon>
+          Tags
+        </mat-card-title>
+      </mat-card-header>
+
+      <mat-card-content>
+        <!-- Add Tag Form -->
+        <div *ngIf="p.project_status !== 'COMPLETED'" class="add-tag-section">
           <mat-form-field appearance="outline" class="tag-input">
-            <mat-label>New tag name</mat-label>
-            <input matInput [(ngModel)]="newTagName" maxlength="10" />
+            <mat-label>Add new tag</mat-label>
+            <input 
+              matInput 
+              [(ngModel)]="newTagName" 
+              maxlength="10" 
+              placeholder="Tag name"
+              (keyup.enter)="addTag()"
+            />
+            <mat-hint>Maximum 10 characters</mat-hint>
           </mat-form-field>
-          <button mat-raised-button color="primary" (click)="addTag()" [disabled]="!newTagName.trim()">
+          <button 
+            mat-raised-button 
+            color="primary" 
+            (click)="addTag()" 
+            [disabled]="!newTagName.trim()"
+          >
             <mat-icon>add</mat-icon>
-            Add Tag
+            Add
           </button>
         </div>
 
-        <div class="tags-list" *ngIf="!tagsLoading(); else tagsLoadingTpl">
-          <div class="tag-item" *ngFor="let tag of tags()">
-            <ng-container *ngIf="editingTagId !== tag.tag_id; else editTagTpl">
-              <mat-chip color="primary" selected>{{ tag.tag_name }}</mat-chip>
-              <button mat-button color="primary" (click)="startEditTag(tag)" *ngIf="p.project_status !== 'COMPLETED'">
-                <mat-icon>edit</mat-icon>
-                Edit
-              </button>
-              <button mat-stroked-button color="warn" (click)="deleteTag(tag.tag_id)" *ngIf="p.project_status !== 'COMPLETED'">
-                <mat-icon>delete</mat-icon>
-                Delete
-              </button>
-            </ng-container>
-            <ng-template #editTagTpl>
-              <mat-form-field appearance="outline" class="tag-edit">
-                <mat-label>Edit tag</mat-label>
-                <input matInput [(ngModel)]="editingTagName" maxlength="10" />
+        <!-- Tags Display -->
+        <div class="tags-container">
+          <div class="tags-list">
+            <div *ngFor="let tag of tags(); trackBy: trackByTagId" class="tag-item">
+              <ng-container *ngIf="editingTagId !== tag.tag_id; else editTagTemplate">
+                <mat-chip 
+                  class="tag-chip clickable-tag" 
+                  color="primary"
+                  (click)="showTagDetails(tag)"
+                  [matTooltip]="'Click to view tag details'">
+                  {{ tag.tag_name }}
+                </mat-chip>
+                <div *ngIf="p.project_status !== 'COMPLETED'" class="tag-actions">
+                  <button mat-icon-button (click)="startEditTag(tag)" [matTooltip]="'Edit tag'">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button mat-icon-button color="warn" (click)="deleteTag(tag.tag_id)" [matTooltip]="'Delete tag'">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+              </ng-container>
+              
+              <ng-template #editTagTemplate>
+                <div class="edit-tag-form">
+                  <mat-form-field appearance="outline" class="edit-tag-input">
+                    <mat-label>Edit tag</mat-label>
+                    <input 
+                      matInput 
+                      [(ngModel)]="editingTagName" 
+                      maxlength="10"
+                      (keyup.enter)="saveEditTag(tag.tag_id)"
+                      (keyup.escape)="cancelEditTag()"
+                    />
+                  </mat-form-field>
+                  <div class="edit-actions">
+                    <button mat-button (click)="cancelEditTag()">Cancel</button>
+                    <button 
+                      mat-raised-button 
+                      color="primary" 
+                      (click)="saveEditTag(tag.tag_id)" 
+                      [disabled]="!editingTagName.trim()"
+                    >
+                      Save
+                    </button>
+                  </div>
+                </div>
+              </ng-template>
+            </div>
+
+            <div *ngIf="tags().length === 0" class="empty-state">
+              <mat-icon>label_off</mat-icon>
+              <span>No tags added</span>
+            </div>
+          </div>
+        </div>
+              </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Tasks Section -->
+    <div class="tasks-section">
+      <div class="tasks-header">
+        <h2>
+          <mat-icon>task</mat-icon>
+          Tasks
+        </h2>
+        
+        <div class="tasks-controls">
+          <div class="tasks-actions" *ngIf="canCreateTask()">
+            <button 
+              mat-raised-button 
+              color="primary" 
+              (click)="showNewTaskForm.set(!showNewTaskForm())"
+            >
+              <mat-icon>add_task</mat-icon>
+              New Task
+            </button>
+          </div>
+
+          <div class="tasks-sorting">
+            <mat-form-field appearance="outline" class="sort-field">
+              <mat-label>Sort by</mat-label>
+              <mat-select [(ngModel)]="taskSortBy" (selectionChange)="onSortChange()">
+                <mat-option value="createdAt">Created time</mat-option>
+                <mat-option value="updatedAt">Updated time</mat-option>
+                <mat-option value="taskName">Task name</mat-option>
+              </mat-select>
+            </mat-form-field>
+            
+            <mat-form-field appearance="outline" class="sort-field">
+              <mat-label>Order</mat-label>
+              <mat-select [(ngModel)]="taskSortOrder" (selectionChange)="onSortChange()">
+                <mat-option value="asc">
+                  <mat-icon>arrow_upward</mat-icon>
+                  Ascending
+                </mat-option>
+                <mat-option value="desc">
+                  <mat-icon>arrow_downward</mat-icon>
+                  Descending
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <button
+            mat-icon-button
+            (click)="refreshTasks()"
+            [matTooltip]="'Refresh tasks'"
+            class="refresh-button"
+          >
+            <mat-icon>refresh</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- New Task Form -->
+      <mat-card *ngIf="showNewTaskForm()" class="new-task-card" appearance="outlined">
+        <mat-card-header>
+          <mat-card-title>Create New Task</mat-card-title>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <div class="new-task-form">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Task name</mat-label>
+              <input matInput [(ngModel)]="newTask.task_name" maxlength="50" required />
+              <mat-hint>Maximum 50 characters</mat-hint>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Description</mat-label>
+              <textarea 
+                matInput 
+                [(ngModel)]="newTask.task_description" 
+                rows="3" 
+                maxlength="250"
+              ></textarea>
+              <mat-hint>Maximum 250 characters</mat-hint>
+            </mat-form-field>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="half-width">
+                <mat-label>Status</mat-label>
+                <mat-select [(ngModel)]="newTask.task_status">
+                  <mat-option value="PENDING">
+                    <mat-icon>schedule</mat-icon>
+                    Pending
+                  </mat-option>
+                  <mat-option value="IN_PROGRESS">
+                    <mat-icon>work</mat-icon>
+                    In Progress
+                  </mat-option>
+                  <mat-option value="COMPLETED">
+                    <mat-icon>check_circle</mat-icon>
+                    Completed
+                  </mat-option>
+                </mat-select>
               </mat-form-field>
-              <button mat-button (click)="cancelEditTag()">Cancel</button>
-              <button mat-raised-button color="primary" (click)="saveEditTag(tag.tag_id)" [disabled]="!editingTagName.trim()">
-                <mat-icon>save</mat-icon>
-                Save
-              </button>
-            </ng-template>
-          </div>
-          <div *ngIf="tags().length === 0" class="muted">No tags</div>
-        </div>
-        <ng-template #tagsLoadingTpl>
-          <div class="center small">
-            <mat-spinner diameter="20"></mat-spinner>
-            <span>Loading tags...</span>
-          </div>
-        </ng-template>
-      </div>
-    </mat-card-content>
 
-    <mat-card-actions align="end">
-      <button mat-button (click)="goBack()">
-        <mat-icon>arrow_back</mat-icon>
-        Back to Projects
-      </button>
-      <button
-        mat-button
-        color="warn"
-        (click)="deleteProject()"
-        *ngIf="canEditProject()"
-        title="Delete project"
-      >
-        <mat-icon>delete</mat-icon>
-        Delete
-      </button>
-      <button
-        mat-raised-button
-        color="primary"
-        (click)="editProject()"
-        *ngIf="canEditProject()"
-        [title]="getEditTooltip()"
-      >
-        <mat-icon>edit</mat-icon>
-        {{ getEditButtonText() }}
-      </button>
-    </mat-card-actions>
-  </mat-card>
+              <mat-form-field appearance="outline" class="half-width">
+                <mat-label>Deadline</mat-label>
+                <input 
+                  matInput 
+                  [matDatepicker]="createPicker" 
+                  [(ngModel)]="deadlineDate" 
+                  placeholder="Choose a date" 
+                  readonly
+                />
+                <mat-datepicker-toggle matIconSuffix [for]="createPicker"></mat-datepicker-toggle>
+                <mat-datepicker #createPicker></mat-datepicker>
+              </mat-form-field>
+            </div>
+          </div>
+        </mat-card-content>
 
-  <!-- Tasks Section -->
-  <div *ngIf="!loading() && !error() && project()" class="tasks-section">
-    <div class="tasks-header">
-      <h2>Tasks</h2>
-      <div class="tasks-actions" *ngIf="canCreateTask()">
-        <button mat-stroked-button color="primary" (click)="showNewTaskForm.set(!showNewTaskForm())">
-          <mat-icon>add</mat-icon>
-          New Task
+        <mat-card-actions align="end">
+          <button mat-button (click)="showNewTaskForm.set(false)">Cancel</button>
+          <button 
+            mat-raised-button 
+            color="primary" 
+            (click)="createTask()" 
+            [disabled]="savingNewTask()"
+          >
+            <mat-icon>save</mat-icon>
+            {{ savingNewTask() ? 'Creating...' : 'Create Task' }}
+          </button>
+        </mat-card-actions>
+      </mat-card>
+
+      <!-- Tasks Error -->
+      <div *ngIf="tasksError()" class="tasks-error">
+        <mat-icon>error_outline</mat-icon>
+        <h3>Failed to load tasks</h3>
+        <p>{{ tasksError() }}</p>
+        <button mat-raised-button color="primary" (click)="refreshTasks()">
+          <mat-icon>refresh</mat-icon>
+          Retry
         </button>
       </div>
-      <div class="tasks-sorting">
-        <mat-form-field appearance="outline" class="sort-field">
-          <mat-label>Sort by</mat-label>
-          <mat-select [(ngModel)]="taskSortBy" (selectionChange)="onSortChange()">
-            <mat-option value="createdAt">Created time</mat-option>
-            <mat-option value="updatedAt">Updated time</mat-option>
-            <mat-option value="taskName">Task name</mat-option>
-          </mat-select>
-        </mat-form-field>
-        <mat-form-field appearance="outline" class="sort-field small">
-          <mat-label>Order</mat-label>
-          <mat-select [(ngModel)]="taskSortOrder" (selectionChange)="onSortChange()">
-            <mat-option value="asc">Ascending</mat-option>
-            <mat-option value="desc">Descending</mat-option>
-          </mat-select>
-        </mat-form-field>
-      </div>
-      <button
-        mat-icon-button
-        (click)="refreshTasks()"
-        [disabled]="tasksLoading()"
-        title="Refresh tasks"
-      >
-        <mat-icon [class.spinning]="tasksLoading()">refresh</mat-icon>
-      </button>
-    </div>
 
-    <div class="new-task-form" *ngIf="showNewTaskForm()">
-      <mat-form-field appearance="outline" class="full">
-        <mat-label>Task name</mat-label>
-        <input matInput [(ngModel)]="newTask.task_name" maxlength="50" />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" class="full">
-        <mat-label>Description</mat-label>
-        <textarea matInput [(ngModel)]="newTask.task_description" rows="3" maxlength="250"></textarea>
-      </mat-form-field>
-
-      <div class="row">
-        <mat-form-field appearance="outline" class="half">
-          <mat-label>Status</mat-label>
-          <mat-select [(ngModel)]="newTask.task_status">
-            <mat-option value="PENDING">Pending</mat-option>
-            <mat-option value="IN_PROGRESS">In Progress</mat-option>
-            <mat-option value="COMPLETED">Completed</mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="half">
-          <mat-label>Deadline</mat-label>
-          <input matInput [matDatepicker]="createPicker" [(ngModel)]="deadlineDate" placeholder="Choose a date" />
-          <mat-datepicker-toggle matIconSuffix [for]="createPicker"></mat-datepicker-toggle>
-          <mat-datepicker #createPicker></mat-datepicker>
-        </mat-form-field>
-      </div>
-
-      <div class="row end">
-        <button mat-button (click)="showNewTaskForm.set(false)">Cancel</button>
-        <button mat-raised-button color="primary" (click)="createTask()" [disabled]="savingNewTask()">
-          <mat-icon>save</mat-icon>
-          Create
-        </button>
-      </div>
-    </div>
-
-    <!-- Tasks Loading -->
-    <div *ngIf="tasksLoading()" class="tasks-loading">
-      <mat-spinner diameter="24"></mat-spinner>
-      <span>Loading tasks...</span>
-    </div>
-
-    <!-- Tasks Error -->
-    <div *ngIf="tasksError()" class="tasks-error">
-      <mat-icon>error_outline</mat-icon>
-      <span>{{ tasksError() }}</span>
-      <button mat-button (click)="refreshTasks()">
-        <mat-icon>refresh</mat-icon>
-        Retry
-      </button>
-    </div>
-
-    <!-- Tasks Kanban Board -->
-    <div *ngIf="!tasksLoading() && !tasksError()" class="tasks-kanban">
-      <!-- Pending Column -->
-      <div class="kanban-column">
-        <div class="column-header pending">
-          <mat-icon>schedule</mat-icon>
-          <span>Pending ({{ pendingTasks().length }})</span>
-        </div>
-        <div class="column-content">
-          <mat-card
-            *ngFor="let task of pendingTasks()"
-            class="task-card pending-task"
-            (click)="openTask(task)"
-          >
-            <mat-card-header>
-              <mat-card-title class="task-title">{{ task.task_name }}</mat-card-title>
-              <mat-card-subtitle class="task-creator">by {{ task.creator }}</mat-card-subtitle>
-            </mat-card-header>
-            <mat-card-content>
-              <p class="task-description">{{ task.task_description || 'No description' }}</p>
-              <div class="task-meta">
-                <span *ngIf="task.task_deadline" class="deadline">
-                  <mat-icon>event</mat-icon>
-                  {{ formatDate(task.task_deadline) }}
-                </span>
-                <span class="members-count">
-                  <mat-icon>group</mat-icon>
-                  {{ task.member_list?.length || 0 }}
-                </span>
-              </div>
-            </mat-card-content>
-          </mat-card>
-          <div *ngIf="pendingTasks().length === 0" class="empty-column">
-            <mat-icon>check_circle_outline</mat-icon>
-            <span>No pending tasks</span>
+      <!-- Tasks Kanban Board -->
+      <div *ngIf="!tasksError()" class="tasks-kanban-3col">
+        <!-- Pending Column -->
+        <div class="kanban-column-3">
+          <div class="column-header pending">
+            <mat-icon>schedule</mat-icon>
+            <span>Pending</span>
+            <mat-chip class="count-chip">{{ pendingTasks().length }}</mat-chip>
+          </div>
+          <div class="column-content" cdkDropList [cdkDropListData]="pendingTasks()" class="task-list">
+            <mat-card
+              *ngFor="let task of pendingTasks(); trackBy: trackByTaskId"
+              class="task-card pending-task"
+              (click)="openTask(task)"
+              cdkDrag
+              appearance="outlined"
+            >
+              <mat-card-header>
+                <mat-card-title class="task-title">{{ task.task_name }}</mat-card-title>
+                <mat-card-subtitle class="task-creator">
+                  <mat-icon>person</mat-icon>
+                  {{ task.creator }}
+                </mat-card-subtitle>
+              </mat-card-header>
+              
+              <mat-card-content>
+                <p class="task-description">{{ task.task_description || 'No description' }}</p>
+                <div class="task-meta">
+                  <div *ngIf="task.task_deadline" class="deadline">
+                    <mat-icon>event</mat-icon>
+                    <span>{{ formatDate(task.task_deadline) }}</span>
+                  </div>
+                  <div class="members-count">
+                    <mat-icon>group</mat-icon>
+                    <span>{{ task.member_list?.length || 0 }}</span>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+            
+            <div *ngIf="pendingTasks().length === 0" class="empty-column">
+              <mat-icon>check_circle_outline</mat-icon>
+              <span>No pending tasks</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- In Progress Column -->
-      <div class="kanban-column">
-        <div class="column-header in-progress">
-          <mat-icon>work</mat-icon>
-          <span>In Progress ({{ inProgressTasks().length }})</span>
-        </div>
-        <div class="column-content">
-          <mat-card
-            *ngFor="let task of inProgressTasks()"
-            class="task-card in-progress-task"
-            (click)="openTask(task)"
-          >
-            <mat-card-header>
-              <mat-card-title class="task-title">{{ task.task_name }}</mat-card-title>
-              <mat-card-subtitle class="task-creator">by {{ task.creator }}</mat-card-subtitle>
-            </mat-card-header>
-            <mat-card-content>
-              <p class="task-description">{{ task.task_description || 'No description' }}</p>
-              <div class="task-meta">
-                <span *ngIf="task.task_deadline" class="deadline">
-                  <mat-icon>event</mat-icon>
-                  {{ formatDate(task.task_deadline) }}
-                </span>
-                <span class="members-count">
-                  <mat-icon>group</mat-icon>
-                  {{ task.member_list?.length || 0 }}
-                </span>
-              </div>
-            </mat-card-content>
-          </mat-card>
-          <div *ngIf="inProgressTasks().length === 0" class="empty-column">
-            <mat-icon>work_outline</mat-icon>
-            <span>No tasks in progress</span>
+        <!-- In Progress Column -->
+        <div class="kanban-column-3">
+          <div class="column-header in-progress">
+            <mat-icon>work</mat-icon>
+            <span>In Progress</span>
+            <mat-chip class="count-chip">{{ inProgressTasks().length }}</mat-chip>
+          </div>
+          <div class="column-content" cdkDropList [cdkDropListData]="inProgressTasks()" class="task-list">
+            <mat-card
+              *ngFor="let task of inProgressTasks(); trackBy: trackByTaskId"
+              class="task-card in-progress-task"
+              (click)="openTask(task)"
+              cdkDrag
+              appearance="outlined"
+            >
+              <mat-card-header>
+                <mat-card-title class="task-title">{{ task.task_name }}</mat-card-title>
+                <mat-card-subtitle class="task-creator">
+                  <mat-icon>person</mat-icon>
+                  {{ task.creator }}
+                </mat-card-subtitle>
+              </mat-card-header>
+              
+              <mat-card-content>
+                <p class="task-description">{{ task.task_description || 'No description' }}</p>
+                <div class="task-meta">
+                  <div *ngIf="task.task_deadline" class="deadline">
+                    <mat-icon>event</mat-icon>
+                    <span>{{ formatDate(task.task_deadline) }}</span>
+                  </div>
+                  <div class="members-count">
+                    <mat-icon>group</mat-icon>
+                    <span>{{ task.member_list?.length || 0 }}</span>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+            
+            <div *ngIf="inProgressTasks().length === 0" class="empty-column">
+              <mat-icon>work_outline</mat-icon>
+              <span>No tasks in progress</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- Completed Column -->
-      <div class="kanban-column">
-        <div class="column-header completed">
-          <mat-icon>check_circle</mat-icon>
-          <span>Completed ({{ completedTasks().length }})</span>
-        </div>
-        <div class="column-content">
-          <mat-card
-            *ngFor="let task of completedTasks()"
-            class="task-card completed-task"
-            (click)="openTask(task)"
-          >
-            <mat-card-header>
-              <mat-card-title class="task-title">{{ task.task_name }}</mat-card-title>
-              <mat-card-subtitle class="task-creator">by {{ task.creator }}</mat-card-subtitle>
-            </mat-card-header>
-            <mat-card-content>
-              <p class="task-description">{{ task.task_description || 'No description' }}</p>
-              <div class="task-meta">
-                <span *ngIf="task.task_deadline" class="deadline">
-                  <mat-icon>event</mat-icon>
-                  {{ formatDate(task.task_deadline) }}
-                </span>
-                <span class="members-count">
-                  <mat-icon>group</mat-icon>
-                  {{ task.member_list?.length || 0 }}
-                </span>
-              </div>
-            </mat-card-content>
-          </mat-card>
-          <div *ngIf="completedTasks().length === 0" class="empty-column">
-            <mat-icon>pending_actions</mat-icon>
-            <span>No completed tasks</span>
+        <!-- Completed Column -->
+        <div class="kanban-column-3">
+          <div class="column-header completed">
+            <mat-icon>check_circle</mat-icon>
+            <span>Completed</span>
+            <mat-chip class="count-chip">{{ completedTasks().length }}</mat-chip>
+          </div>
+          <div class="column-content" cdkDropList [cdkDropListData]="completedTasks()" class="task-list">
+            <mat-card
+              *ngFor="let task of completedTasks(); trackBy: trackByTaskId"
+              class="task-card completed-task"
+              (click)="openTask(task)"
+              cdkDrag
+              appearance="outlined"
+            >
+              <mat-card-header>
+                <mat-card-title class="task-title">{{ task.task_name }}</mat-card-title>
+                <mat-card-subtitle class="task-creator">
+                  <mat-icon>person</mat-icon>
+                  {{ task.creator }}
+                </mat-card-subtitle>
+              </mat-card-header>
+              
+              <mat-card-content>
+                <p class="task-description">{{ task.task_description || 'No description' }}</p>
+                <div class="task-meta">
+                  <div *ngIf="task.task_deadline" class="deadline">
+                    <mat-icon>event</mat-icon>
+                    <span>{{ formatDate(task.task_deadline) }}</span>
+                  </div>
+                  <div class="members-count">
+                    <mat-icon>group</mat-icon>
+                    <span>{{ task.member_list?.length || 0 }}</span>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+            
+            <div *ngIf="completedTasks().length === 0" class="empty-column">
+              <mat-icon>pending_actions</mat-icon>
+              <span>No completed tasks</span>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
+  </ng-container>
 </div>

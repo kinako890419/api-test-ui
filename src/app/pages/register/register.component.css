@@ -1,2 +1,353 @@
-h2 { margin-top: 0; }
-form .btn { width: fit-content; }
+/* Container & Layout */
+.register-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+  background: #ffffff;
+}
+
+.register-card {
+  width: 100%;
+  max-width: 480px;
+  padding: 0;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  border-radius: 16px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+/* Header Styling */
+.register-header {
+  background: #989898;
+  color: white;
+  padding: 32px 24px;
+  text-align: center;
+}
+
+.register-avatar {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+}
+
+.register-avatar mat-icon {
+  font-size: 32px;
+  width: 32px;
+  height: 32px;
+}
+
+.register-header .mat-mdc-card-title {
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: white;
+}
+
+.register-header .mat-mdc-card-subtitle {
+  font-size: 16px;
+  opacity: 0.9;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Content */
+.register-content {
+  padding: 32px 24px;
+}
+
+.register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Form Fields */
+.full-width {
+  width: 100%;
+}
+
+.mat-mdc-form-field {
+  font-size: 16px;
+}
+
+.mat-mdc-form-field .mat-mdc-text-field-wrapper {
+  border-radius: 8px;
+}
+
+.mat-mdc-form-field-hint-wrapper {
+  padding: 0 16px;
+}
+
+/* Password Strength Indicator */
+.password-strength {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.strength-weak {
+  color: #f44336;
+  font-weight: 500;
+}
+
+.strength-medium {
+  color: #ff9800;
+  font-weight: 500;
+}
+
+.strength-strong {
+  color: #4caf50;
+  font-weight: 500;
+}
+
+/* Password Requirements */
+.password-requirements {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 8px 0;
+  border-left: 4px solid #2196f3;
+}
+
+.password-requirements h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.requirements-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.requirements-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #666;
+  transition: color 0.2s ease;
+}
+
+.requirements-list li.met {
+  color: #4caf50;
+  font-weight: 500;
+}
+
+.requirements-list li mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.requirements-list li:not(.met) mat-icon {
+  color: #f44336;
+}
+
+.requirements-list li.met mat-icon {
+  color: #4caf50;
+}
+
+/* Server Message */
+.server-message {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  margin: 16px 0;
+}
+
+.server-message.success {
+  background: #e8f5e8;
+  color: #2e7d32;
+  border: 1px solid #c8e6c9;
+}
+
+.server-message.error {
+  background: #ffebee;
+  color: #c62828;
+  border: 1px solid #ffcdd2;
+}
+
+.server-message mat-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+/* Form Actions */
+.form-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.submit-button {
+  height: 48px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 8px;
+  text-transform: none;
+  letter-spacing: 0.5px;
+}
+
+.submit-button:disabled {
+  opacity: 0.6;
+}
+
+.clear-button {
+  height: 40px;
+  border-radius: 6px;
+  text-transform: none;
+}
+
+/* Navigation Links */
+.navigation-links {
+  text-align: center;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.login-link {
+  margin: 0;
+  font-size: 14px;
+  color: #666;
+}
+
+.link-button {
+  text-transform: none;
+  font-weight: 600;
+  padding: 4px 8px;
+  min-width: auto;
+}
+
+/* Error States */
+.mat-mdc-form-field.mat-form-field-invalid .mat-mdc-text-field-wrapper {
+  border-color: #f44336;
+}
+
+.mat-mdc-form-field-error {
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+/* Loading State */
+.submit-button:disabled .mat-mdc-button-persistent-ripple {
+  opacity: 0.3;
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+  .register-container {
+    padding: 16px;
+    align-items: flex-start;
+    padding-top: 40px;
+  }
+  
+  .register-card {
+    max-width: 100%;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  .register-header {
+    padding: 24px 20px;
+  }
+  
+  .register-content {
+    padding: 24px 20px;
+  }
+  
+  .register-header .mat-mdc-card-title {
+    font-size: 24px;
+  }
+  
+  .register-header .mat-mdc-card-subtitle {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 400px) {
+  .register-container {
+    padding: 12px;
+  }
+  
+  .register-header {
+    padding: 20px 16px;
+  }
+  
+  .register-content {
+    padding: 20px 16px;
+  }
+}
+
+/* Focus States */
+.mat-mdc-form-field:not(.mat-form-field-disabled) .mat-mdc-text-field-wrapper:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Animation */
+.register-card {
+  animation: slideInUp 0.4s ease-out;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Accessibility */
+.submit-button:focus,
+.clear-button:focus,
+.link-button:focus {
+  outline: 2px solid #2196f3;
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .register-card {
+    border: 2px solid #000;
+  }
+  
+  .server-message.success {
+    border-color: #000;
+  }
+  
+  .server-message.error {
+    border-color: #000;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .register-card {
+    animation: none;
+  }
+  
+  .requirements-list li {
+    transition: none;
+  }
+}
