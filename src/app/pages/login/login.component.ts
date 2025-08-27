@@ -55,26 +55,12 @@ export class LoginComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Initialize the reactive form with validation rules
+   * Initialize the reactive form without validation
    */
   private initializeForm(): void {
     this.form = this.formBuilder.group({
-      user_mail: [
-        '',
-        [
-          Validators.required,
-          Validators.email,
-          Validators.maxLength(50)
-        ]
-      ],
-      user_password: [
-        '',
-        [
-          Validators.required,
-          Validators.minLength(3),
-          Validators.maxLength(100)
-        ]
-      ],
+      user_mail: [''],
+      user_password: [''],
     });
   }
 
@@ -91,11 +77,6 @@ export class LoginComponent implements OnInit, OnDestroy {
    * Handle form submission
    */
   submit(): void {
-    if (this.form.invalid) {
-      this.markAllFieldsAsTouched();
-      return;
-    }
-
     const loginRequest: LoginRequest = this.form.value;
 
     this.loginSubscription = this.authService.login(loginRequest)
@@ -131,8 +112,8 @@ export class LoginComponent implements OnInit, OnDestroy {
    * Extract error message from error response
    */
   private extractErrorMessage(error: any): string {
-    return error?.error?.response_message || 
-           error?.message || 
+    return error?.error?.response_message ||
+           error?.message ||
            'Network error. Please check your connection and try again.';
   }
 

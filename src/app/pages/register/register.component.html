@@ -6,13 +6,13 @@
 
     <mat-card-content class="register-content">
       <form [formGroup]="form" (ngSubmit)="submit()" class="register-form" novalidate>
-        
+
         <!-- Username Field -->
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Username</mat-label>
-          <input 
-            matInput 
-            type="text" 
+          <input
+            matInput
+            type="text"
             formControlName="user_name"
             placeholder="Enter your username"
           >
@@ -23,34 +23,29 @@
         <!-- Email Field -->
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Email Address</mat-label>
-          <input 
-            matInput 
-            type="email" 
+          <input
+            matInput
+            type="email"
             formControlName="email"
             placeholder="Enter your email address"
             autocomplete="email"
-            [attr.aria-describedby]="emailErrors().length ? 'email-errors' : null"
           >
           <mat-icon matSuffix>email</mat-icon>
-          <mat-error id="email-errors">
-            <div *ngFor="let error of emailErrors()">{{ error }}</div>
-          </mat-error>
         </mat-form-field>
 
         <!-- Password Field -->
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Password</mat-label>
-          <input 
-            matInput 
+          <input
+            matInput
             [type]="hidePassword() ? 'password' : 'text'"
-            formControlName="password"
-            placeholder="Create a strong password"
+            formControlName="user_password"
+            placeholder="Enter your password"
             autocomplete="new-password"
-            [attr.aria-describedby]="passwordErrors().length ? 'password-errors' : null"
           >
-          <button 
-            mat-icon-button 
-            matSuffix 
+          <button
+            mat-icon-button
+            matSuffix
             type="button"
             (click)="togglePasswordVisibility()"
             [attr.aria-label]="'Toggle password visibility'"
@@ -58,15 +53,11 @@
           >
             <mat-icon>{{ hidePassword() ? 'visibility' : 'visibility_off' }}</mat-icon>
           </button>
-          
-          <mat-error id="password-errors">
-            <div *ngFor="let error of passwordErrors()">{{ error }}</div>
-          </mat-error>
         </mat-form-field>
 
         <!-- Server Message -->
-        <div 
-          class="server-message" 
+        <div
+          class="server-message"
           *ngIf="serverMessage()"
           [class.success]="isSuccess()"
           [class.error]="!isSuccess()"
@@ -79,20 +70,19 @@
 
         <!-- Action Buttons -->
         <div class="form-actions">
-          <button 
-            mat-raised-button 
-            color="primary" 
-            type="submit" 
+          <button
+            mat-raised-button
+            color="primary"
+            type="submit"
             class="submit-button"
-            [disabled]="!isFormValid()"
           >
             <mat-icon>person_add</mat-icon>
             <span>Create Account</span>
           </button>
 
-          <button 
-            mat-button 
-            type="button" 
+          <button
+            mat-button
+            type="button"
             (click)="clearForm()"
             class="clear-button"
           >
@@ -104,10 +94,10 @@
         <!-- Navigation Links -->
         <div class="navigation-links">
           <p class="login-link">
-            Already have an account? 
-            <a 
-              mat-button 
-              routerLink="/login"
+            Already have an account?
+            <a
+              mat-button
+              routerLink="/auth/login"
               class="link-button"
             >
               Sign In

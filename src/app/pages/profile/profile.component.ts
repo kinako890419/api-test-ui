@@ -7,8 +7,9 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { FormsModule } from '@angular/forms';
-import { UserService, UserProfileResp, EditUserInfoReq } from '../../services/user.service';
+import { UserService } from '../../services/user.service';
 import { AuthService } from '../../services/auth.service';
+import { UserProfileResp, EditUserInfoReq } from '../../models';
 import { Router, ActivatedRoute } from '@angular/router';
 
 @Component({
@@ -44,7 +45,7 @@ export class ProfileComponent {
     const current = this.auth.currentUser();
     if (!current || !id || (id !== current.user_id)) {
       // Only allow self-profile for now
-      this.router.navigate(['/login']);
+      this.router.navigate(['/auth/login']);
       return;
     }
     this.usersSvc.getById(id).subscribe({
@@ -82,7 +83,7 @@ export class ProfileComponent {
         if (emailChanged) {
           this.snack.open('Email changed, please login again', 'Close', { duration: 4000 });
           this.auth.clearSession();
-          this.router.navigate(['/login']);
+          this.router.navigate(['/auth/login']);
         } else {
           this.ngOnInit();
         }

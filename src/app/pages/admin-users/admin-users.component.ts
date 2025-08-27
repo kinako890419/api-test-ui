@@ -8,8 +8,9 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { FormsModule } from '@angular/forms';
-import { UserService, UserProfileResp } from '../../services/user.service';
+import { UserService } from '../../services/user.service';
 import { AuthService } from '../../services/auth.service';
+import { UserProfileResp } from '../../models';
 
 @Component({
   selector: 'app-admin-users',

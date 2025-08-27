@@ -19,13 +19,21 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
 // Services & Models
 import { AuthService } from '../../services/auth.service';
-import { ProjectService, ProjectUserDetailsResp } from '../../services/project.service';
+import { ProjectService } from '../../services/project.service';
 import { TaskService } from '../../services/task.service';
-import { TaskDetailResp, EditTaskReq, TagsResp, CommentContentReq } from '../../models/task.models';
-import { ProjStatus } from '../../models/project.models';
+import {
+  ProjectUserDetailsResp,
+  ProjStatus,
+  TagsResp,
+  TaskDetailResp,
+  EditTaskReq,
+  CommentContentReq,
+  TaskAttachmentResp
+} from '../../models';
 
 // Dialog component
 import { TagDetailsDialogComponent } from '../project-detail/tag-details-dialog.component';
+import { AttachmentDetailsDialogComponent } from './attachment-details-dialog.component';
 
 @Component({
   selector: 'app-task-detail',
@@ -126,7 +134,7 @@ export class TaskDetailComponent implements OnInit {
   private initializeComponent(): void {
     const projectIdParam = this.route.snapshot.paramMap.get('id');
     const taskIdParam = this.route.snapshot.paramMap.get('taskId');
-    
+
     const projectId = projectIdParam ? Number(projectIdParam) : null;
     const taskId = taskIdParam ? Number(taskIdParam) : null;
 
@@ -193,7 +201,7 @@ export class TaskDetailComponent implements OnInit {
       status: taskData.status,
       task_deadline: taskData.deadline ? taskData.deadline.substring(0, 10) : undefined,
     };
-    
+
     this.deadlineDate = taskData.deadline ? new Date(taskData.deadline) : null;
   }
 
@@ -202,7 +210,7 @@ export class TaskDetailComponent implements OnInit {
    */
   format(dateStr?: string | null): string {
     if (!dateStr) return 'N/A';
-    
+
     try {
       return this.datePipe.transform(dateStr, 'MMM d, y, HH:mm') || 'N/A';
     } catch {
@@ -247,7 +255,7 @@ export class TaskDetailComponent implements OnInit {
    */
   toggleEdit(): void {
     this.editing.set(!this.editing());
-    
+
     if (!this.editing()) {
       // Reset form when cancelling edit
       const currentTask = this.task();
@@ -263,7 +271,7 @@ export class TaskDetailComponent implements OnInit {
   save(): void {
     const projectId = this.projectId();
     const currentTask = this.task();
-    
+
     if (!projectId || !currentTask) {
       this.showSnackBar('Missing required data to save task', 'error');
       return;
@@ -278,8 +286,8 @@ export class TaskDetailComponent implements OnInit {
           task_name: this.form.task_name,
           task_description: this.form.task_description,
           status: this.form.status,
-          task_deadline: this.deadlineDate 
-            ? this.datePipe.transform(this.deadlineDate, 'yyyy-MM-dd') || undefined 
+          task_deadline: this.deadlineDate
+            ? this.datePipe.transform(this.deadlineDate, 'yyyy-MM-dd') || undefined
             : undefined,
         };
 
@@ -305,7 +313,7 @@ export class TaskDetailComponent implements OnInit {
   deleteTask(): void {
     const projectId = this.projectId();
     const currentTask = this.task();
-    
+
     if (!projectId || !currentTask) return;
 
     const confirmed = confirm(`Are you sure you want to delete "${currentTask.task_name}"? This action cannot be undone.`);
@@ -328,7 +336,7 @@ export class TaskDetailComponent implements OnInit {
    */
   isAlreadyTaskMember(userId: number | null): boolean {
     if (!userId) return false;
-    
+
     const currentTask = this.task();
     return !!currentTask?.member_lists?.some(member => member.user_id === userId);
   }
@@ -339,7 +347,7 @@ export class TaskDetailComponent implements OnInit {
   inviteToTask(): void {
     const projectId = this.projectId();
     const currentTask = this.task();
-    
+
     if (!projectId || !currentTask || !this.inviteUserIds.length) {
       this.showSnackBar('Please select users to invite', 'warning');
       return;
@@ -370,7 +378,7 @@ export class TaskDetailComponent implements OnInit {
   removeFromTask(userId: number): void {
     const projectId = this.projectId();
     const currentTask = this.task();
-    
+
     if (!projectId || !currentTask) return;
 
     this.removingUserId.set(userId);
@@ -396,9 +404,9 @@ export class TaskDetailComponent implements OnInit {
   canEditComment(commentUserName: string): boolean {
     const currentUser = this.authService.currentUser();
     const currentTask = this.task();
-    
+
     if (!currentTask || currentTask.status === 'COMPLETED') return false;
-    
+
     // User can edit their own comments
     return !!currentUser && currentUser.user_name === commentUserName;
   }
@@ -410,7 +418,7 @@ export class TaskDetailComponent implements OnInit {
     const projectId = this.projectId();
     const currentTask = this.task();
     const content = this.newCommentContent().trim();
-    
+
     if (!projectId || !currentTask || !content) {
       this.showSnackBar('Please enter a comment', 'warning');
       return;
@@ -457,7 +465,7 @@ export class TaskDetailComponent implements OnInit {
     const projectId = this.projectId();
     const currentTask = this.task();
     const content = this.editingCommentContent().trim();
-    
+
     if (!projectId || !currentTask || !content) {
       this.showSnackBar('Please enter comment content', 'warning');
       return;
@@ -482,7 +490,7 @@ export class TaskDetailComponent implements OnInit {
   deleteComment(commentId: number): void {
     const projectId = this.projectId();
     const currentTask = this.task();
-    
+
     if (!projectId || !currentTask) return;
 
     const confirmed = confirm('Are you sure you want to delete this comment?');
@@ -506,7 +514,7 @@ export class TaskDetailComponent implements OnInit {
   addTagToTask(): void {
     const projectId = this.projectId();
     const currentTask = this.task();
-    
+
     if (!projectId || !currentTask || !this.selectedTagId) {
       this.showSnackBar('Please select a tag to add', 'warning');
       return;
@@ -536,7 +544,7 @@ export class TaskDetailComponent implements OnInit {
   removeTagFromTask(tagId: number): void {
     const projectId = this.projectId();
     const currentTask = this.task();
-    
+
     if (!projectId || !currentTask) return;
 
     this.tagging.set(true);
@@ -567,6 +575,16 @@ export class TaskDetailComponent implements OnInit {
   }
 
   /**
+   * Show attachment details in a dialog
+   */
+  showAttachmentDetails(attachment: TaskAttachmentResp): void {
+    this.dialog.open(AttachmentDetailsDialogComponent, {
+      width: '600px',
+      data: attachment
+    });
+  }
+
+  /**
    * Handle file selection for upload
    */
   onFileSelected(event: Event): void {
@@ -576,7 +594,7 @@ export class TaskDetailComponent implements OnInit {
     const file = input.files[0];
     const projectId = this.projectId();
     const currentTask = this.task();
-    
+
     if (!projectId || !currentTask) return;
 
     // Validate file size (e.g., max 10MB)
@@ -606,7 +624,7 @@ export class TaskDetailComponent implements OnInit {
   download(attachmentId: number): void {
     const projectId = this.projectId();
     const currentTask = this.task();
-    
+
     if (!projectId || !currentTask) return;
 
     this.taskService.downloadAttachment(projectId, currentTask.task_id, attachmentId).subscribe({
@@ -614,11 +632,11 @@ export class TaskDetailComponent implements OnInit {
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        
+
         // Find attachment name
         const attachment = currentTask.task_attachments?.find(a => a.id === attachmentId);
         link.download = attachment?.file_name || `attachment-${attachmentId}`;
-        
+
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -636,7 +654,7 @@ export class TaskDetailComponent implements OnInit {
   deleteAttachment(attachmentId: number): void {
     const projectId = this.projectId();
     const currentTask = this.task();
-    
+
     if (!projectId || !currentTask) return;
 
     const confirmed = confirm('Are you sure you want to delete this attachment?');
@@ -716,11 +734,11 @@ export class TaskDetailComponent implements OnInit {
    */
   getFileSize(bytes: number): string {
     if (bytes === 0) return '0 Bytes';
-    
+
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    
+
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
 
@@ -729,10 +747,10 @@ export class TaskDetailComponent implements OnInit {
    */
   isOverdue(deadline?: string | null): boolean {
     if (!deadline) return false;
-    
+
     const deadlineDate = new Date(deadline);
     const now = new Date();
-    
+
     return deadlineDate < now;
   }
 
@@ -741,12 +759,12 @@ export class TaskDetailComponent implements OnInit {
    */
   getDaysUntilDeadline(deadline?: string | null): number {
     if (!deadline) return 0;
-    
+
     const deadlineDate = new Date(deadline);
     const now = new Date();
     const diffTime = deadlineDate.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     return diffDays;
   }
 
@@ -755,9 +773,9 @@ export class TaskDetailComponent implements OnInit {
    */
   getDeadlineStatus(deadline?: string | null): string {
     if (!deadline) return '';
-    
+
     const days = this.getDaysUntilDeadline(deadline);
-    
+
     if (days < 0) {
       return `Overdue by ${Math.abs(days)} day${Math.abs(days) !== 1 ? 's' : ''}`;
     } else if (days === 0) {
@@ -776,9 +794,9 @@ export class TaskDetailComponent implements OnInit {
    */
   getDeadlineClass(deadline?: string | null): string {
     if (!deadline) return '';
-    
+
     const days = this.getDaysUntilDeadline(deadline);
-    
+
     if (days < 0) {
       return 'deadline-overdue';
     } else if (days <= 1) {
@@ -819,7 +837,7 @@ export class TaskDetailComponent implements OnInit {
     if (!this.validateForm()) {
       return;
     }
-    
+
     this.save();
   }
 
@@ -829,7 +847,7 @@ export class TaskDetailComponent implements OnInit {
   getTaskProgress(): number {
     const currentTask = this.task();
     if (!currentTask) return 0;
-    
+
     switch (currentTask.status) {
       case 'PENDING': return 0;
       case 'IN_PROGRESS': return 50;
@@ -844,7 +862,7 @@ export class TaskDetailComponent implements OnInit {
   getProgressColor(): string {
     const currentTask = this.task();
     if (!currentTask) return 'primary';
-    
+
     switch (currentTask.status) {
       case 'PENDING': return 'warn';
       case 'IN_PROGRESS': return 'accent';
@@ -859,8 +877,8 @@ export class TaskDetailComponent implements OnInit {
   isTaskCreator(): boolean {
     const currentUser = this.authService.currentUser();
     const currentTask = this.task();
-    
-    return !!currentUser && !!currentTask && 
+
+    return !!currentUser && !!currentTask &&
            currentUser.user_name === currentTask.creator_name;
   }
 
@@ -870,7 +888,7 @@ export class TaskDetailComponent implements OnInit {
   getMemberCountText(): string {
     const currentTask = this.task();
     const count = currentTask?.member_lists?.length || 0;
-    
+
     return count === 1 ? '1 member' : `${count} members`;
   }
 
@@ -880,7 +898,7 @@ export class TaskDetailComponent implements OnInit {
   getCommentCountText(): string {
     const currentTask = this.task();
     const count = currentTask?.task_comments?.length || 0;
-    
+
     return count === 1 ? '1 comment' : `${count} comments`;
   }
 
@@ -890,7 +908,7 @@ export class TaskDetailComponent implements OnInit {
   getAttachmentCountText(): string {
     const currentTask = this.task();
     const count = currentTask?.task_attachments?.length || 0;
-    
+
     return count === 1 ? '1 attachment' : `${count} attachments`;
   }
 
@@ -905,7 +923,7 @@ export class TaskDetailComponent implements OnInit {
         this.saveWithValidation();
       }
     }
-    
+
     // Escape to cancel editing
     if (event.key === 'Escape') {
       if (this.editing()) {

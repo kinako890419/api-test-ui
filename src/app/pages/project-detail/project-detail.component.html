@@ -31,7 +31,7 @@
         <div class="project-description">
           <p>{{ p.project_description || 'No description available' }}</p>
         </div>
-        
+
         <div class="project-metadata">
           <div class="meta-item">
             <mat-icon>access_time</mat-icon>
@@ -53,7 +53,6 @@
           mat-button
           color="warn"
           (click)="deleteProject()"
-          *ngIf="canEditProject()"
           [matTooltip]="'Delete project'"
         >
           <mat-icon>delete</mat-icon>
@@ -63,7 +62,6 @@
           mat-raised-button
           color="primary"
           (click)="editProject()"
-          *ngIf="canEditProject()"
           [matTooltip]="getEditTooltip()"
         >
           <mat-icon>edit</mat-icon>
@@ -88,7 +86,7 @@
 
         <mat-card-content>
           <!-- Invite Form -->
-          <div *ngIf="canManageMembers() && p.project_status !== 'COMPLETED'" class="invite-section">
+          <div class="invite-section">
             <h4>Invite Members</h4>
             <div class="invite-form">
               <mat-form-field appearance="outline" class="invite-user-field">
@@ -98,7 +96,6 @@
                   <mat-option
                     *ngFor="let u of allUsers()"
                     [value]="u.user_id"
-                    [disabled]="isAlreadyMember(u.user_id)"
                   >
                     <div class="user-option">
                       <span class="user-name">{{ u.user_name }}</span>
@@ -122,10 +119,10 @@
                 </mat-select>
               </mat-form-field>
 
-              <button 
-                mat-raised-button 
-                color="primary" 
-                (click)="inviteMember()" 
+              <button
+                mat-raised-button
+                color="primary"
+                (click)="inviteMember()"
                 [disabled]="!inviteUserId || savingInvite()"
                 class="invite-button"
               >
@@ -141,12 +138,12 @@
               <div class="member-avatar">
                 <mat-icon>account_circle</mat-icon>
               </div>
-              
+
               <div class="member-info">
                 <div class="member-name">
                   {{ m.user_name }}
-                  <mat-chip 
-                    *ngIf="m.user_id === p.creator_id" 
+                  <mat-chip
+                    *ngIf="m.user_id === p.creator_id"
                     class="creator-chip"
                     color="accent"
                   >
@@ -158,43 +155,26 @@
               </div>
 
               <div class="member-actions">
-                <ng-container *ngIf="canManageMembers(); else selfLeave">
-                  <mat-form-field appearance="outline" class="role-select">
-                    <mat-label>Role</mat-label>
-                    <mat-select
-                      [ngModel]="m.user_project_role"
-                      (ngModelChange)="changeMemberRole(m.user_id, $event)"
-                      [disabled]="savingRole() || m.user_id === p.creator_id"
-                    >
-                      <mat-option value="USER">User</mat-option>
-                      <mat-option value="OWNER">Owner</mat-option>
-                    </mat-select>
-                  </mat-form-field>
+                <mat-form-field appearance="outline" class="role-select">
+                  <mat-label>Role</mat-label>
+                  <mat-select
+                    [ngModel]="m.user_project_role"
+                    (ngModelChange)="changeMemberRole(m.user_id, $event)"
+                    [disabled]="savingRole()"
+                  >
+                    <mat-option value="USER">User</mat-option>
+                    <mat-option value="OWNER">Owner</mat-option>
+                  </mat-select>
+                </mat-form-field>
 
-                  <button
-                    mat-icon-button
-                    color="warn"
-                    (click)="removeMember(m.user_id)"
-                    [disabled]="removingUserId() === m.user_id || m.user_id === p.creator_id"
-                    [matTooltip]="'Remove member'"
-                  >
-                    <mat-icon>person_remove</mat-icon>
-                  </button>
-                </ng-container>
-                
-                <ng-template #selfLeave>
-                  <button
-                    mat-stroked-button
-                    color="warn"
-                    *ngIf="canLeaveMember(m.user_id)"
-                    (click)="removeMember(m.user_id)"
-                    [disabled]="removingUserId() === m.user_id"
-                    [matTooltip]="'Leave project'"
-                  >
-                    <mat-icon>logout</mat-icon>
-                    Leave
-                  </button>
-                </ng-template>
+                <button
+                  mat-icon-button
+                  color="warn"
+                  (click)="removeMember(m.user_id)"
+                  [matTooltip]="'Remove member'"
+                >
+                  <mat-icon>person_remove</mat-icon>
+                </button>
               </div>
             </div>
 
@@ -217,22 +197,22 @@
 
       <mat-card-content>
         <!-- Add Tag Form -->
-        <div *ngIf="p.project_status !== 'COMPLETED'" class="add-tag-section">
+  <div class="add-tag-section">
           <mat-form-field appearance="outline" class="tag-input">
             <mat-label>Add new tag</mat-label>
-            <input 
-              matInput 
-              [(ngModel)]="newTagName" 
-              maxlength="10" 
+            <input
+              matInput
+              [(ngModel)]="newTagName"
+              maxlength="10"
               placeholder="Tag name"
               (keyup.enter)="addTag()"
             />
             <mat-hint>Maximum 10 characters</mat-hint>
           </mat-form-field>
-          <button 
-            mat-raised-button 
-            color="primary" 
-            (click)="addTag()" 
+          <button
+            mat-raised-button
+            color="primary"
+            (click)="addTag()"
             [disabled]="!newTagName.trim()"
           >
             <mat-icon>add</mat-icon>
@@ -245,14 +225,14 @@
           <div class="tags-list">
             <div *ngFor="let tag of tags(); trackBy: trackByTagId" class="tag-item">
               <ng-container *ngIf="editingTagId !== tag.tag_id; else editTagTemplate">
-                <mat-chip 
-                  class="tag-chip clickable-tag" 
+                <mat-chip
+                  class="tag-chip clickable-tag"
                   color="primary"
                   (click)="showTagDetails(tag)"
                   [matTooltip]="'Click to view tag details'">
                   {{ tag.tag_name }}
                 </mat-chip>
-                <div *ngIf="p.project_status !== 'COMPLETED'" class="tag-actions">
+                <div class="tag-actions">
                   <button mat-icon-button (click)="startEditTag(tag)" [matTooltip]="'Edit tag'">
                     <mat-icon>edit</mat-icon>
                   </button>
@@ -261,14 +241,14 @@
                   </button>
                 </div>
               </ng-container>
-              
+
               <ng-template #editTagTemplate>
                 <div class="edit-tag-form">
                   <mat-form-field appearance="outline" class="edit-tag-input">
                     <mat-label>Edit tag</mat-label>
-                    <input 
-                      matInput 
-                      [(ngModel)]="editingTagName" 
+                    <input
+                      matInput
+                      [(ngModel)]="editingTagName"
                       maxlength="10"
                       (keyup.enter)="saveEditTag(tag.tag_id)"
                       (keyup.escape)="cancelEditTag()"
@@ -276,10 +256,10 @@
                   </mat-form-field>
                   <div class="edit-actions">
                     <button mat-button (click)="cancelEditTag()">Cancel</button>
-                    <button 
-                      mat-raised-button 
-                      color="primary" 
-                      (click)="saveEditTag(tag.tag_id)" 
+                    <button
+                      mat-raised-button
+                      color="primary"
+                      (click)="saveEditTag(tag.tag_id)"
                       [disabled]="!editingTagName.trim()"
                     >
                       Save
@@ -306,12 +286,12 @@
           <mat-icon>task</mat-icon>
           Tasks
         </h2>
-        
+
         <div class="tasks-controls">
-          <div class="tasks-actions" *ngIf="canCreateTask()">
-            <button 
-              mat-raised-button 
-              color="primary" 
+          <div class="tasks-actions">
+            <button
+              mat-raised-button
+              color="primary"
               (click)="showNewTaskForm.set(!showNewTaskForm())"
             >
               <mat-icon>add_task</mat-icon>
@@ -328,7 +308,7 @@
                 <mat-option value="taskName">Task name</mat-option>
               </mat-select>
             </mat-form-field>
-            
+
             <mat-form-field appearance="outline" class="sort-field">
               <mat-label>Order</mat-label>
               <mat-select [(ngModel)]="taskSortOrder" (selectionChange)="onSortChange()">
@@ -360,7 +340,7 @@
         <mat-card-header>
           <mat-card-title>Create New Task</mat-card-title>
         </mat-card-header>
-        
+
         <mat-card-content>
           <div class="new-task-form">
             <mat-form-field appearance="outline" class="full-width">
@@ -371,10 +351,10 @@
 
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>Description</mat-label>
-              <textarea 
-                matInput 
-                [(ngModel)]="newTask.task_description" 
-                rows="3" 
+              <textarea
+                matInput
+                [(ngModel)]="newTask.task_description"
+                rows="3"
                 maxlength="250"
               ></textarea>
               <mat-hint>Maximum 250 characters</mat-hint>
@@ -401,11 +381,11 @@
 
               <mat-form-field appearance="outline" class="half-width">
                 <mat-label>Deadline</mat-label>
-                <input 
-                  matInput 
-                  [matDatepicker]="createPicker" 
-                  [(ngModel)]="deadlineDate" 
-                  placeholder="Choose a date" 
+                <input
+                  matInput
+                  [matDatepicker]="createPicker"
+                  [(ngModel)]="deadlineDate"
+                  placeholder="Choose a date"
                   readonly
                 />
                 <mat-datepicker-toggle matIconSuffix [for]="createPicker"></mat-datepicker-toggle>
@@ -417,10 +397,10 @@
 
         <mat-card-actions align="end">
           <button mat-button (click)="showNewTaskForm.set(false)">Cancel</button>
-          <button 
-            mat-raised-button 
-            color="primary" 
-            (click)="createTask()" 
+          <button
+            mat-raised-button
+            color="primary"
+            (click)="createTask()"
             [disabled]="savingNewTask()"
           >
             <mat-icon>save</mat-icon>
@@ -464,7 +444,7 @@
                   {{ task.creator }}
                 </mat-card-subtitle>
               </mat-card-header>
-              
+
               <mat-card-content>
                 <p class="task-description">{{ task.task_description || 'No description' }}</p>
                 <div class="task-meta">
@@ -479,7 +459,7 @@
                 </div>
               </mat-card-content>
             </mat-card>
-            
+
             <div *ngIf="pendingTasks().length === 0" class="empty-column">
               <mat-icon>check_circle_outline</mat-icon>
               <span>No pending tasks</span>
@@ -509,7 +489,7 @@
                   {{ task.creator }}
                 </mat-card-subtitle>
               </mat-card-header>
-              
+
               <mat-card-content>
                 <p class="task-description">{{ task.task_description || 'No description' }}</p>
                 <div class="task-meta">
@@ -524,7 +504,7 @@
                 </div>
               </mat-card-content>
             </mat-card>
-            
+
             <div *ngIf="inProgressTasks().length === 0" class="empty-column">
               <mat-icon>work_outline</mat-icon>
               <span>No tasks in progress</span>
@@ -554,7 +534,7 @@
                   {{ task.creator }}
                 </mat-card-subtitle>
               </mat-card-header>
-              
+
               <mat-card-content>
                 <p class="task-description">{{ task.task_description || 'No description' }}</p>
                 <div class="task-meta">
@@ -569,7 +549,7 @@
                 </div>
               </mat-card-content>
             </mat-card>
-            
+
             <div *ngIf="completedTasks().length === 0" class="empty-column">
               <mat-icon>pending_actions</mat-icon>
               <span>No completed tasks</span>

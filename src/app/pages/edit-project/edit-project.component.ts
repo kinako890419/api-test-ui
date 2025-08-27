@@ -9,8 +9,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { ProjectService, ProjDetailsResp, EditProjectReq } from '../../services/project.service';
-import { ProjStatus } from '../../models/project.models';
+import { ProjectService } from '../../services/project.service';
+import { ProjDetailsResp, EditProjectReq, ProjStatus } from '../../models';
 
 @Component({
   selector: 'app-edit-project',
@@ -41,11 +41,11 @@ export class EditProjectComponent {
   readonly error = signal<string>('');
   readonly project = signal<ProjDetailsResp | null>(null);
 
-  // Form
+  // Form without client-side validation
   readonly form: FormGroup = this.fb.group({
-    project_name: ['', [Validators.required, Validators.maxLength(50)]],
-    project_description: ['', [Validators.maxLength(250)]],
-    project_status: ['', [Validators.required]]
+    project_name: [''],
+    project_description: [''],
+    project_status: ['']
   });
 
   // Status options
@@ -109,11 +109,6 @@ export class EditProjectComponent {
    * Handle form submission
    */
   onSubmit(): void {
-    if (this.form.invalid) {
-      this.markFormGroupTouched();
-      return;
-    }
-
     const project = this.project();
     if (!project) {
       this.error.set('Project data not available');
@@ -173,62 +168,5 @@ export class EditProjectComponent {
     } else {
       this.router.navigate(['/projects']);
     }
-  }
-
-  /**
-   * Mark all form controls as touched to show validation errors
-   */
-  private markFormGroupTouched(): void {
-    Object.keys(this.form.controls).forEach(key => {
-      const control = this.form.get(key);
-      control?.markAsTouched();
-    });
-  }
-
-  /**
-   * Get form field error message
-   */
-  getFieldError(fieldName: string): string {
-    const control = this.form.get(fieldName);
-    if (!control || !control.touched || !control.errors) {
-      return '';
-    }
-
-    const errors = control.errors;
-
-    if (errors['required']) {
-      return `${this.getFieldLabel(fieldName)} is required`;
-    }
-
-    if (errors['maxlength']) {
-      const maxLength = errors['maxlength'].requiredLength;
-      return `${this.getFieldLabel(fieldName)} cannot exceed ${maxLength} characters`;
-    }
-
-    return 'Invalid input';
-  }
-
-  /**
-   * Get user-friendly field label
-   */
-  private getFieldLabel(fieldName: string): string {
-    switch (fieldName) {
-      case 'project_name':
-        return 'Project name';
-      case 'project_description':
-        return 'Project description';
-      case 'project_status':
-        return 'Project status';
-      default:
-        return fieldName;
-    }
-  }
-
-  /**
-   * Check if form field has error and is touched
-   */
-  hasFieldError(fieldName: string): boolean {
-    const control = this.form.get(fieldName);
-    return !!(control && control.errors && control.touched);
   }
 }

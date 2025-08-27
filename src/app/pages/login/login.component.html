@@ -15,15 +15,6 @@
             placeholder="Enter your email"
           >
           <mat-icon matSuffix>email</mat-icon>
-          <mat-error *ngIf="form.get('user_mail')?.hasError('required')">
-            Email is required
-          </mat-error>
-          <mat-error *ngIf="form.get('user_mail')?.hasError('email')">
-            Please enter a valid email address
-          </mat-error>
-          <mat-error *ngIf="form.get('user_mail')?.hasError('maxlength')">
-            Email must be less than 50 characters
-          </mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="form-field">
@@ -43,12 +34,6 @@
             [attr.aria-pressed]="hidePassword">
             <mat-icon>{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
           </button>
-          <mat-error *ngIf="form.get('user_password')?.hasError('required')">
-            Password is required
-          </mat-error>
-          <mat-error *ngIf="form.get('user_password')?.hasError('minlength')">
-            Password must be at least 3 characters long
-          </mat-error>
         </mat-form-field>
 
         <div class="error-message" *ngIf="errorMsg">
@@ -61,15 +46,14 @@
             mat-raised-button
             color="primary"
             type="submit"
-            class="login-button"
-            [disabled]="form.invalid">
+            class="login-button">
             <mat-icon>login</mat-icon>
             <span>Sign In</span>
           </button>
         </div>
 
         <div class="register-link">
-          <a mat-button color="primary" routerLink="/register">Create Account</a>
+          <a mat-button color="primary" routerLink="/auth/register">Create Account</a>
         </div>
       </form>
     </mat-card-content>

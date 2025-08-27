@@ -8,9 +8,9 @@ const USER_KEY = 'auth.user';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private tokenSig = signal<string | null>(localStorage.getItem(TOKEN_KEY));
+  private tokenSig = signal<string | null>(sessionStorage.getItem(TOKEN_KEY));
   private userSig = signal<LoginSuccess['user'] | null>(
-    JSON.parse(localStorage.getItem(USER_KEY) || 'null')
+    JSON.parse(sessionStorage.getItem(USER_KEY) || 'null')
   );
 
   token = computed(() => this.tokenSig());
@@ -30,15 +30,17 @@ export class AuthService {
   }
 
   setSession(login: LoginSuccess) {
-    localStorage.setItem(TOKEN_KEY, login.token);
-    localStorage.setItem(USER_KEY, JSON.stringify(login.user));
+  // localStorage: 一個瀏覽器存放一個，多個tab共用，直到手動清除才會登出(如果沒過期)
+  // sessionStorage: 每個tab各自存放，關閉tab後自動登出
+    sessionStorage.setItem(TOKEN_KEY, login.token);
+    sessionStorage.setItem(USER_KEY, JSON.stringify(login.user));
     this.tokenSig.set(login.token);
     this.userSig.set(login.user);
   }
 
   clearSession() {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
+    sessionStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(USER_KEY);
     this.tokenSig.set(null);
     this.userSig.set(null);
   }

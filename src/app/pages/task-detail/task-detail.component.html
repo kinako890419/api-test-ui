@@ -296,9 +296,16 @@
           <div *ngFor="let a of t.task_attachments || []" class="attachment-item">
             <div class="attachment-info">
               <mat-icon class="attachment-icon">attach_file</mat-icon>
-              <span class="attachment-name" [title]="a.content_path">{{ a.file_name }}</span>
+              <span class="attachment-name" [title]="a.file_name">{{ a.file_name }}</span>
             </div>
             <div class="attachment-actions">
+              <button 
+                mat-icon-button 
+                (click)="showAttachmentDetails(a)"
+                [matTooltip]="'View attachment details'"
+                class="info-btn">
+                <mat-icon>info</mat-icon>
+              </button>
               <button 
                 mat-button 
                 color="primary" 

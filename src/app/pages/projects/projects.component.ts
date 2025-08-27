@@ -12,9 +12,9 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { FormsModule } from '@angular/forms';
-import { ProjectService, ProjDetailsResp, SortBy, Order, ProjectQuery } from '../../services/project.service';
-import { ProjStatus } from '../../models/project.models';
+import { ProjectService } from '../../services/project.service';
 import { AuthService } from '../../services/auth.service';
+import { ProjDetailsResp, SortBy, Order, ProjectQuery, ProjStatus } from '../../models';
 
 @Component({
   selector: 'app-projects',
@@ -219,39 +219,22 @@ export class ProjectsComponent implements OnInit, OnDestroy {
    * Check if current user can edit the project
    */
   canEditProject(project: ProjDetailsResp): boolean {
-    const currentUser = this.auth.currentUser();
-
-    if (!project || !currentUser) {
-      return false;
-    }
-
-    // User can edit if they are the creator or have OWNER role
-    const isCreator = project.creator_id === currentUser.user_id;
-    const isOwner = project.member_list?.some(
-      member => member.user_id === currentUser.user_id && member.user_project_role === 'OWNER'
-    );
-
-    return isCreator || !!isOwner;
+  // Frontend no longer restricts edit visibility; backend enforces permissions
+  return !!project;
   }
 
   /**
    * Check if project allows full editing (not completed)
    */
   canFullyEditProject(project: ProjDetailsResp): boolean {
-    return this.canEditProject(project) && project.project_status !== 'COMPLETED';
+  return !!project; // backend enforces status rules
   }
 
   /**
    * Get tooltip text for edit button
    */
   getEditTooltip(project: ProjDetailsResp): string {
-    if (!this.canEditProject(project)) {
-      return 'You do not have permission to edit this project';
-    }
-    if (project.project_status === 'COMPLETED') {
-      return 'Completed projects can only have their status modified';
-    }
-    return 'Edit project details';
+  return 'Edit project details';
   }
 
   /**

@@ -21,22 +21,21 @@ import { FormsModule } from '@angular/forms';
 import { DragDropModule } from '@angular/cdk/drag-drop';
 
 // Service and model imports
-import { 
-  ProjectService, 
-  ProjDetailsResp, 
-  ProjectMemberRole, 
-  TagsResp 
-} from '../../services/project.service';
+import { ProjectService } from '../../services/project.service';
 import { TaskService } from '../../services/task.service';
-import { 
-  TaskListResp, 
-  ViewAllTaskResp, 
-  TaskQuery, 
-  Order 
-} from '../../models/task.models';
-import { ProjStatus } from '../../models/project.models';
+import { UserService } from '../../services/user.service';
 import { AuthService } from '../../services/auth.service';
-import { UserService, UserProfileResp } from '../../services/user.service';
+import {
+  ProjDetailsResp,
+  ProjectMemberRole,
+  TagsResp,
+  ProjStatus,
+  Order,
+  TaskListResp,
+  ViewAllTaskResp,
+  TaskQuery,
+  UserProfileResp
+} from '../../models';
 
 // Dialog component
 import { TagDetailsDialogComponent } from './tag-details-dialog.component';
@@ -84,7 +83,7 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
   private readonly datePipe = inject(DatePipe);
   private readonly snackBar = inject(MatSnackBar);
   private readonly dialog = inject(MatDialog);
-  
+
   // Lifecycle management
   private readonly destroy$ = new Subject<void>();
 
@@ -92,7 +91,7 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
   readonly error = signal('');
   readonly tasksError = signal('');
   readonly project = signal<ProjDetailsResp | null>(null);
-  
+
   // Task collections by status
   readonly pendingTasks = signal<TaskListResp[]>([]);
   readonly inProgressTasks = signal<TaskListResp[]>([]);
@@ -161,7 +160,7 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
     if (!project) return;
 
     const confirmMessage = `Are you sure you want to delete project "${project.project_name}"? This action cannot be undone.`;
-    
+
     if (confirm(confirmMessage)) {
       this.projectService.delete(project.project_id)
         .pipe(takeUntil(this.destroy$))
@@ -186,7 +185,7 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
     if (!project || !this.inviteUserId) return;
 
     this.savingInvite.set(true);
-    
+
     this.projectService.inviteMembers(project.project_id, [{
       user_id: this.inviteUserId,
       user_role: this.inviteRole
@@ -214,7 +213,7 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
     if (!project) return;
 
     this.savingRole.set(true);
-    
+
     this.projectService.setMemberRole(project.project_id, {
       user_id: userId,
       user_role: newRole
@@ -242,22 +241,22 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
 
     const currentUser = this.authService.currentUser();
     const isLeavingProject = currentUser?.user_id === userId;
-    const confirmMessage = isLeavingProject 
+    const confirmMessage = isLeavingProject
       ? 'Are you sure you want to leave this project?'
       : 'Are you sure you want to remove this member from the project?';
 
     if (!confirm(confirmMessage)) return;
 
     this.removingUserId.set(userId);
-    
+
     this.projectService.removeMember(project.project_id, userId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
-          const message = response.response_message || 
+          const message = response.response_message ||
             (isLeavingProject ? 'Left project successfully' : 'Member removed successfully');
           this.showSuccess(message);
-          
+
           if (isLeavingProject) {
             this.router.navigate(['/projects']);
           } else {
@@ -265,7 +264,7 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
           }
         },
         error: (error) => {
-          const message = error?.error?.response_message || 
+          const message = error?.error?.response_message ||
             (isLeavingProject ? 'Failed to leave project' : 'Failed to remove member');
           this.showError(message);
         },
@@ -282,7 +281,7 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
 
     this.savingNewTask.set(true);
     const formattedDeadline = this.datePipe.transform(this.deadlineDate, 'yyyy-MM-dd') || '';
-    
+
     this.taskService.addTask(project.project_id, {
       task_name: this.newTask.task_name.trim(),
       task_description: this.newTask.task_description?.trim() || undefined,
@@ -432,53 +431,33 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
    * Check if current user can edit this project
    */
   canEditProject(): boolean {
-    const project = this.project();
-    const currentUser = this.authService.currentUser();
-
-    if (!project || !currentUser) return false;
-
-    const isCreator = project.creator_id === currentUser.user_id;
-    const isOwner = project.member_list?.some(
-      member => member.user_id === currentUser.user_id && 
-                member.user_project_role === 'OWNER'
-    );
-
-    return isCreator || !!isOwner;
+  // Frontend no longer restricts edit; backend enforces permissions
+  return !!this.project();
   }
 
   /**
    * Check if current user can manage members
    */
   canManageMembers(): boolean {
-    return this.canEditProject();
+  // Frontend allows showing member management; backend validates actions
+  return !!this.project();
   }
 
   /**
    * Check if current user can create tasks
    */
   canCreateTask(): boolean {
-    const project = this.project();
-    const currentUser = this.authService.currentUser();
-    
-    if (!project || !currentUser) return false;
-    
-    const isMember = !!project.member_list?.some(m => m.user_id === currentUser.user_id);
-    const notCompleted = project.project_status !== 'COMPLETED';
-    
-    return isMember && notCompleted;
+  // Allow task creation UI; backend will enforce membership and status rules
+  return !!this.project();
   }
 
   /**
    * Check if user can leave project
    */
   canLeaveMember(memberUserId: number): boolean {
-    const project = this.project();
-    const currentUser = this.authService.currentUser();
-    
-    if (!project || !currentUser) return false;
-    
-    return currentUser.user_id === memberUserId && 
-           currentUser.user_id !== project.creator_id;
+  // Allow leave action button to be shown for current user
+  const currentUser = this.authService.currentUser();
+  return !!currentUser && currentUser.user_id === memberUserId;
   }
 
   // Utility methods
@@ -496,21 +475,15 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
    * Get edit button text based on project status
    */
   getEditButtonText(): string {
-    const project = this.project();
-    return project?.project_status === 'COMPLETED' ? 'Edit Status' : 'Edit Project';
+  return 'Edit Project';
   }
 
   /**
    * Get edit button tooltip
    */
   getEditTooltip(): string {
-    const project = this.project();
-    if (!project) return '';
-
-    if (project.project_status === 'COMPLETED') {
-      return 'Completed projects can only have their status modified';
-    }
-    return 'Edit project details';
+  // Keep a generic tooltip; backend decides permission
+  return 'Edit project details';
   }
 
   /**
@@ -679,15 +652,8 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (users) => {
-          const currentUser = this.authService.currentUser();
-          const isAdmin = currentUser?.user_role === 'ADMIN';
-          
-          // Filter out admin users if current user is not admin
-          const filteredUsers = isAdmin 
-            ? users 
-            : users.filter(u => u.user_role !== 'ADMIN');
-            
-          this.allUsers.set(filteredUsers);
+          // Show all users; backend will enforce invitation permissions
+          this.allUsers.set(users);
         },
         error: (error) => {
           console.error('Failed to load users:', error);
@@ -744,7 +710,7 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
    */
   private isValidTaskForm(): boolean {
     const { task_name } = this.newTask;
-    
+
     if (!task_name?.trim()) {
       this.showError('Task name is required');
       return false;

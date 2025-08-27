@@ -1,6 +1,4 @@
-import type { ProjStatus } from './project.models';
-
-export type Order = 'asc' | 'desc';
+import type { ProjStatus, Order, TagsResp } from './project.models';
 
 export interface TaskUserDetailsResp {
   user_id: number;
@@ -35,19 +33,12 @@ export interface TaskQuery {
   order?: Order;
 }
 
-export interface TagsResp {
-  tag_id: number;
-  tag_name: string;
-  creator?: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
 export interface TaskAttachmentResp {
   id: number;
   file_name: string;
-  content_path: string;
   creator_name: string;
+  file_size: number;
+  content_type: string;
   created_at?: string;
   updated_at?: string;
 }

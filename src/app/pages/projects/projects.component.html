@@ -155,8 +155,7 @@
           mat-button
           color="accent"
           (click)="editProject(project); $event.stopPropagation()"
-          *ngIf="canEditProject(project)"
-          [title]="getEditTooltip(project)"
+          [title]="'Edit project'"
         >
           <mat-icon>edit</mat-icon>
           Edit
@@ -165,7 +164,6 @@
           mat-button
           color="warn"
           (click)="deleteProject(project, $event)"
-          *ngIf="canEditProject(project)"
           title="Delete project"
         >
           <mat-icon>delete</mat-icon>
