@@ -40,11 +40,6 @@ export class AdminUsersComponent {
   viewDeleted = signal(false);
 
   ngOnInit() {
-    const isAdmin = this.auth.currentUser()?.user_role === 'ADMIN';
-    if (!isAdmin) {
-      this.error.set('Not authorized');
-      return;
-    }
     this.refresh();
   }
 
@@ -57,7 +52,6 @@ export class AdminUsersComponent {
   }
 
   grantAdmin(user: UserProfileResp) {
-    if (user.user_role === 'ADMIN') return;
     this.usersSvc.edit(user.user_id, { is_admin: true }).subscribe({
       next: () => { this.snack.open('Granted ADMIN', 'Close', { duration: 2000 }); this.refresh(); },
       error: (err) => this.snack.open(err?.error?.response_message || 'Failed to grant ADMIN', 'Close', { duration: 3000 })

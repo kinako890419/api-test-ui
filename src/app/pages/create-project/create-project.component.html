@@ -1,11 +1,7 @@
 <div class="create-project-container">
   <mat-card class="create-form-card">
     <mat-card-header>
-      <div mat-card-avatar class="create-avatar">
-        <mat-icon>add</mat-icon>
-      </div>
       <mat-card-title>Create New Project</mat-card-title>
-      <mat-card-subtitle>Set up a new project to start organizing your work</mat-card-subtitle>
     </mat-card-header>
 
     <mat-card-content>
@@ -17,7 +13,6 @@
             matInput
             formControlName="project_name"
             placeholder="Enter project name"
-            maxlength="50"
           />
           <mat-hint align="end">{{ form.get('project_name')?.value?.length || 0 }}/50</mat-hint>
         </mat-form-field>
@@ -30,7 +25,6 @@
             formControlName="project_description"
             placeholder="Enter project description (optional)"
             rows="4"
-            maxlength="250"
           ></textarea>
           <mat-hint align="end">{{ form.get('project_description')?.value?.length || 0 }}/250</mat-hint>
         </mat-form-field>

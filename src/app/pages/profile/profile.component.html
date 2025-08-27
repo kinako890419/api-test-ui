@@ -20,10 +20,10 @@
       <p class="muted">User ID: {{ u.user_id }}</p>
       <p class="muted">Role: {{ u.user_role }}</p>
       <p class="muted" *ngIf="u.created_at">
-        Created: {{ u.created_at | date:'MMM d, y, HH:mm' }}
+        Created: {{ u.created_at | date:'MMM d, y, h:mm a' }}
       </p>
       <p class="muted" *ngIf="u.updated_at">
-        Updated: {{ u.updated_at | date:'MMM d, y, HH:mm' }}
+        Updated: {{ u.updated_at | date:'MMM d, y, h:mm a' }}
       </p>
     </mat-card-content>
 

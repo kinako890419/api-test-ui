@@ -330,7 +330,7 @@ export class ProjectsComponent implements OnInit, OnDestroy {
     }
 
     try {
-      const formatted = this.datePipe.transform(dateString, 'MMM d, y');
+      const formatted = this.datePipe.transform(dateString, 'MMM d, y, h:mm a');
       return formatted || 'Invalid date';
     } catch {
       return 'Invalid date';

@@ -82,5 +82,5 @@ export interface EditTaskReq {
   task_name?: string;
   task_description?: string;
   status?: ProjStatus | string;
-  task_deadline?: string; // yyyy-MM-dd or ISO accepted by backend
+  task_deadline?: string;
 }

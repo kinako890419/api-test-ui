@@ -48,7 +48,7 @@ export interface ProjectQuery {
   sortBy?: SortBy;
   order?: Order;
   page?: number; // starts from 1
-  pageSize?: number; // default 5
+  pageSize?: number;
   status?: ProjStatus;
 }
 
@@ -65,10 +65,10 @@ export interface CreateProjectReq {
 }
 
 export interface ProjTagContentReq {
-  tag_name: string; // <= 10 chars per backend schema
+  tag_name: string;
 }
 
 export interface SetProjectMemberRoleRq {
   user_id: number;
-  user_role: ProjectMemberRole | string; // backend ignores case; keep string for flexibility
+  user_role: ProjectMemberRole | string;
 }

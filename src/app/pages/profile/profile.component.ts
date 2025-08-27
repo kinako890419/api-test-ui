@@ -42,12 +42,6 @@ export class ProfileComponent {
 
   ngOnInit() {
     const id = Number(this.route.snapshot.paramMap.get('id'));
-    const current = this.auth.currentUser();
-    if (!current || !id || (id !== current.user_id)) {
-      // Only allow self-profile for now
-      this.router.navigate(['/auth/login']);
-      return;
-    }
     this.usersSvc.getById(id).subscribe({
       next: (u) => {
         this.me.set(u);
@@ -70,12 +64,8 @@ export class ProfileComponent {
     const nameChanged = nextName !== u.user_name;
     const emailChanged = nextEmail !== u.user_email;
     const payload: EditUserInfoReq = {};
-    if (nameChanged) payload.user_name = nextName;
-    if (emailChanged) payload.user_email = nextEmail;
-    if (!nameChanged && !emailChanged) {
-      this.snack.open('Nothing changed', 'Close', { duration: 2000 });
-      return;
-    }
+    payload.user_name = nextName;
+    payload.user_email = nextEmail;
     this.saving.set(true);
     this.usersSvc.edit(u.user_id, payload).subscribe({
       next: () => {
@@ -88,7 +78,10 @@ export class ProfileComponent {
           this.ngOnInit();
         }
       },
-      error: (err) => this.snack.open(err?.error?.response_message || 'Failed to save', 'Close', { duration: 3000 }),
+      error: (err) => {
+        this.snack.open(err?.error?.response_message || 'Failed to save', 'Close', { duration: 3000 });
+        this.saving.set(false);
+      },
       complete: () => this.saving.set(false)
     });
   }

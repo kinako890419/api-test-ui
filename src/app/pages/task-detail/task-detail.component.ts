@@ -300,6 +300,7 @@ export class TaskDetailComponent implements OnInit {
       error: (error) => {
         const errorMessage = error?.error?.response_message || 'Failed to update task';
         this.showSnackBar(errorMessage, 'error');
+        this.saving.set(false);
       },
       complete: () => {
         this.saving.set(false);
@@ -365,6 +366,7 @@ export class TaskDetailComponent implements OnInit {
       error: (error) => {
         const errorMessage = error?.error?.response_message || 'Failed to add members to task';
         this.showSnackBar(errorMessage, 'error');
+        this.savingInvite.set(false);
       },
       complete: () => {
         this.savingInvite.set(false);
@@ -391,6 +393,7 @@ export class TaskDetailComponent implements OnInit {
       error: (error) => {
         const errorMessage = error?.error?.response_message || 'Failed to remove member from task';
         this.showSnackBar(errorMessage, 'error');
+        this.removingUserId.set(null);
       },
       complete: () => {
         this.removingUserId.set(null);
@@ -435,6 +438,7 @@ export class TaskDetailComponent implements OnInit {
       error: (error) => {
         const errorMessage = error?.error?.response_message || 'Failed to add comment';
         this.showSnackBar(errorMessage, 'error');
+        this.addingComment.set(false);
       },
       complete: () => {
         this.addingComment.set(false);
@@ -531,6 +535,7 @@ export class TaskDetailComponent implements OnInit {
       error: (error) => {
         const errorMessage = error?.error?.response_message || 'Failed to add tag';
         this.showSnackBar(errorMessage, 'error');
+        this.tagging.set(false);
       },
       complete: () => {
         this.tagging.set(false);
@@ -557,6 +562,7 @@ export class TaskDetailComponent implements OnInit {
       error: (error) => {
         const errorMessage = error?.error?.response_message || 'Failed to remove tag';
         this.showSnackBar(errorMessage, 'error');
+        this.tagging.set(false);
       },
       complete: () => {
         this.tagging.set(false);
@@ -596,14 +602,6 @@ export class TaskDetailComponent implements OnInit {
     const currentTask = this.task();
 
     if (!projectId || !currentTask) return;
-
-    // Validate file size (e.g., max 10MB)
-    const maxSize = 10 * 1024 * 1024; // 10MB
-    if (file.size > maxSize) {
-      this.showSnackBar('File size must be less than 10MB', 'warning');
-      input.value = '';
-      return;
-    }
 
     this.taskService.uploadTaskAttachment(projectId, currentTask.task_id, file).subscribe({
       next: (response) => {
@@ -670,6 +668,7 @@ export class TaskDetailComponent implements OnInit {
       error: (error) => {
         const errorMessage = error?.error?.response_message || 'Failed to delete attachment';
         this.showSnackBar(errorMessage, 'error');
+        this.deletingId.set(null);
       },
       complete: () => {
         this.deletingId.set(null);

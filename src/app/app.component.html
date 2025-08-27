@@ -3,7 +3,7 @@
   <ng-container *ngIf="auth.isAuthenticated(); else loggedOut">
     <a mat-button routerLink="/projects">Projects</a>
   <a mat-button [routerLink]="['/users', auth.currentUser()?.user_id]">Profile</a>
-  <a mat-button routerLink="/users" *ngIf="auth.currentUser()?.user_role === 'ADMIN'">Admin</a>
+  <a mat-button routerLink="/users">Admin</a>
     <button mat-raised-button color="accent" (click)="logout()">Logout</button>
   </ng-container>
   <ng-template #loggedOut>

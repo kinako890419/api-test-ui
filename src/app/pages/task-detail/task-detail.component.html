@@ -27,37 +27,37 @@
         </p>
 
         <div class="action-buttons">
-        <button 
-          *ngIf="!editing() && t.is_editable" 
-          mat-stroked-button 
-          color="primary" 
+        <button
+          *ngIf="!editing() && t.is_editable"
+          mat-stroked-button
+          color="primary"
           (click)="toggleEdit()"
           class="edit-btn">
           <mat-icon>edit</mat-icon>
           Edit Task
         </button>
-        
-        <button 
-          *ngIf="t.is_editable" 
-          mat-stroked-button 
-          color="warn" 
+
+        <button
+          *ngIf="t.is_editable"
+          mat-stroked-button
+          color="warn"
           (click)="deleteTask()"
           class="delete-btn">
           <mat-icon>delete</mat-icon>
           Delete Task
         </button>
       </div>
-        
+
         <!-- Edit Form -->
         <div *ngIf="editing()" class="edit-form">
           <h4 class="edit-title">Edit Task</h4>
-          
+
           <mat-form-field appearance="outline" class="form-field full-width">
             <mat-label>Task Name</mat-label>
-            <input 
-              matInput 
-              [(ngModel)]="form.task_name" 
-              maxlength="50" 
+            <input
+              matInput
+              [(ngModel)]="form.task_name"
+              maxlength="50"
               [disabled]="onlyStatusEditable()"
               placeholder="Enter task name" />
             <mat-hint>{{ form.task_name?.length || 0 }}/50</mat-hint>
@@ -65,13 +65,12 @@
 
           <mat-form-field appearance="outline" class="form-field full-width">
             <mat-label>Description</mat-label>
-            <textarea 
-              matInput 
-              [(ngModel)]="form.task_description" 
-              rows="4" 
-              maxlength="250" 
-              [disabled]="onlyStatusEditable()"
-              placeholder="Describe the task..."></textarea>
+            <textarea
+              matInput
+              [(ngModel)]="form.task_description"
+              rows="4"
+              maxlength="250"
+              [disabled]="onlyStatusEditable()"></textarea>
             <mat-hint>{{ form.task_description?.length || 0 }}/250</mat-hint>
           </mat-form-field>
 
@@ -96,11 +95,11 @@
 
             <mat-form-field appearance="outline" class="form-field half-width">
               <mat-label>Deadline</mat-label>
-              <input 
-                matInput 
-                [matDatepicker]="picker" 
-                [(ngModel)]="deadlineDate" 
-                [disabled]="onlyStatusEditable()" 
+              <input
+                matInput
+                [matDatepicker]="picker"
+                [(ngModel)]="deadlineDate"
+                [disabled]="onlyStatusEditable()"
                 placeholder="Select deadline" />
               <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
               <mat-datepicker #picker></mat-datepicker>
@@ -112,10 +111,10 @@
               <mat-icon>close</mat-icon>
               Cancel
             </button>
-            <button 
-              mat-raised-button 
-              color="primary" 
-              (click)="save()" 
+            <button
+              mat-raised-button
+              color="primary"
+              (click)="save()"
               [disabled]="saving()"
               class="save-btn">
               <mat-icon>save</mat-icon>
@@ -163,9 +162,9 @@
           <mat-form-field appearance="outline" class="invite-field">
             <mat-label>Add team members</mat-label>
             <mat-select [(ngModel)]="inviteUserIds" multiple>
-              <mat-option 
-                *ngFor="let m of projectMembers()" 
-                [value]="m.user_id" 
+              <mat-option
+                *ngFor="let m of projectMembers()"
+                [value]="m.user_id"
                 [disabled]="isAlreadyTaskMember(m.user_id)">
                 <div class="user-option">
                   <span class="user-name">{{ m.user_name }}</span>
@@ -174,10 +173,10 @@
               </mat-option>
             </mat-select>
           </mat-form-field>
-          <button 
-            mat-raised-button 
-            color="primary" 
-            (click)="inviteToTask()" 
+          <button
+            mat-raised-button
+            color="primary"
+            (click)="inviteToTask()"
             [disabled]="inviteUserIds.length === 0 || savingInvite()"
             class="invite-btn">
             <mat-icon>person_add</mat-icon>
@@ -195,11 +194,11 @@
                 <span class="member-email">{{ m.user_email }}</span>
               </div>
             </div>
-            <button 
-              *ngIf="t.is_editable" 
-              mat-icon-button 
-              color="warn" 
-              (click)="removeFromTask(m.user_id)" 
+            <button
+              *ngIf="t.is_editable"
+              mat-icon-button
+              color="warn"
+              (click)="removeFromTask(m.user_id)"
               [disabled]="removingUserId() === m.user_id"
               class="remove-btn"
               matTooltip="Remove member">
@@ -222,16 +221,16 @@
 
         <div class="tags-content">
           <mat-chip-set class="tags-list">
-            <mat-chip 
-              *ngFor="let tag of t.tags || []" 
+            <mat-chip
+              *ngFor="let tag of t.tags || []"
               class="task-tag clickable-tag"
               (click)="showTagDetails(tag)"
               [matTooltip]="'Click to view tag details'">
               <span>{{ tag.tag_name }}</span>
-              <button 
-                *ngIf="t.is_editable" 
-                matChipRemove 
-                (click)="removeTagFromTask(tag.tag_id); $event.stopPropagation()" 
+              <button
+                *ngIf="t.is_editable"
+                matChipRemove
+                (click)="removeTagFromTask(tag.tag_id); $event.stopPropagation()"
                 [disabled]="tagging()">
                 <mat-icon>cancel</mat-icon>
               </button>
@@ -247,17 +246,17 @@
             <mat-form-field appearance="outline" class="tag-select">
               <mat-label>Add project tag</mat-label>
               <mat-select [(ngModel)]="selectedTagId">
-                <mat-option 
-                  *ngFor="let tag of availableProjectTags()" 
+                <mat-option
+                  *ngFor="let tag of availableProjectTags()"
                   [value]="tag.tag_id">
                   {{ tag.tag_name }}
                 </mat-option>
               </mat-select>
             </mat-form-field>
-            <button 
-              mat-raised-button 
-              color="accent" 
-              (click)="addTagToTask()" 
+            <button
+              mat-raised-button
+              color="accent"
+              (click)="addTagToTask()"
               [disabled]="!selectedTagId || tagging()"
               class="add-tag-btn">
               <mat-icon>add</mat-icon>
@@ -276,14 +275,14 @@
 
         <!-- Upload Section -->
         <div *ngIf="t.is_editable" class="upload-section">
-          <input 
+          <input
             #fileInput
-            type="file" 
-            (change)="onFileSelected($event)" 
+            type="file"
+            (change)="onFileSelected($event)"
             class="file-input" />
-          <button 
-            mat-stroked-button 
-            color="primary" 
+          <button
+            mat-stroked-button
+            color="primary"
             (click)="fileInput.click()"
             class="upload-btn">
             <mat-icon>cloud_upload</mat-icon>
@@ -299,26 +298,26 @@
               <span class="attachment-name" [title]="a.file_name">{{ a.file_name }}</span>
             </div>
             <div class="attachment-actions">
-              <button 
-                mat-icon-button 
+              <button
+                mat-icon-button
                 (click)="showAttachmentDetails(a)"
                 [matTooltip]="'View attachment details'"
                 class="info-btn">
                 <mat-icon>info</mat-icon>
               </button>
-              <button 
-                mat-button 
-                color="primary" 
+              <button
+                mat-button
+                color="primary"
                 (click)="download(a.id)"
                 class="download-btn">
                 <mat-icon>download</mat-icon>
                 Download
               </button>
-              <button 
+              <button
                 *ngIf="t.is_editable"
-                mat-icon-button 
-                color="warn" 
-                (click)="deleteAttachment(a.id)" 
+                mat-icon-button
+                color="warn"
+                (click)="deleteAttachment(a.id)"
                 [disabled]="deletingId() === a.id"
                 matTooltip="Delete attachment">
                 <mat-icon>delete</mat-icon>
@@ -348,17 +347,17 @@
                 <span class="comment-time">{{ format(c.created_at) }}</span>
               </div>
               <div *ngIf="t.is_editable" class="comment-actions">
-                <button 
+                <button
                   *ngIf="editingCommentId() !== c.comment_id"
-                  mat-icon-button 
+                  mat-icon-button
                   (click)="startEditComment(c.comment_id, c.content)"
                   matTooltip="Edit comment">
                   <mat-icon>edit</mat-icon>
                 </button>
-                <button 
+                <button
                   *ngIf="editingCommentId() !== c.comment_id"
-                  mat-icon-button 
-                  color="warn" 
+                  mat-icon-button
+                  color="warn"
                   (click)="deleteComment(c.comment_id)"
                   matTooltip="Delete comment">
                   <mat-icon>delete</mat-icon>
@@ -370,19 +369,19 @@
             <div *ngIf="editingCommentId() === c.comment_id" class="edit-comment-form">
               <mat-form-field appearance="outline" class="form-field full-width">
                 <mat-label>Edit comment</mat-label>
-                <textarea 
-                  matInput 
-                  rows="3" 
-                  [ngModel]="editingCommentContent()" 
+                <textarea
+                  matInput
+                  rows="3"
+                  [ngModel]="editingCommentContent()"
                   (ngModelChange)="editingCommentContent.set($event)"
                   maxlength="500"></textarea>
                 <mat-hint>{{ editingCommentContent().length }}/500</mat-hint>
               </mat-form-field>
               <div class="form-actions">
                 <button mat-button (click)="cancelEditComment()">Cancel</button>
-                <button 
-                  mat-raised-button 
-                  color="primary" 
+                <button
+                  mat-raised-button
+                  color="primary"
                   (click)="saveEditComment(c.comment_id)">
                   <mat-icon>save</mat-icon>
                   Save
@@ -405,20 +404,20 @@
         <div *ngIf="t.is_editable" class="add-comment-section">
           <mat-form-field appearance="outline" class="form-field full-width">
             <mat-label>Add a comment</mat-label>
-            <textarea 
-              matInput 
-              rows="3" 
-              [ngModel]="newCommentContent()" 
-              (ngModelChange)="newCommentContent.set($event)" 
-              maxlength="500" 
+            <textarea
+              matInput
+              rows="3"
+              [ngModel]="newCommentContent()"
+              (ngModelChange)="newCommentContent.set($event)"
+              maxlength="500"
               placeholder="Share your thoughts..."></textarea>
             <mat-hint>{{ newCommentContent().length }}/500</mat-hint>
           </mat-form-field>
           <div class="form-actions">
-            <button 
-              mat-raised-button 
-              color="primary" 
-              (click)="addComment()" 
+            <button
+              mat-raised-button
+              color="primary"
+              (click)="addComment()"
               [disabled]="!newCommentContent().trim()"
               class="add-comment-btn">
               <mat-icon>send</mat-icon>

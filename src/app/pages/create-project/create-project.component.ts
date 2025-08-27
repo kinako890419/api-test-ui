@@ -89,6 +89,7 @@ export class CreateProjectComponent {
           duration: 5000,
           panelClass: ['error-snackbar']
         });
+        this.saving.set(false);
       },
       complete: () => {
         this.saving.set(false);

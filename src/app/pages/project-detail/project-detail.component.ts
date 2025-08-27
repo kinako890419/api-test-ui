@@ -200,6 +200,7 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
       error: (error) => {
         const message = error?.error?.response_message || 'Failed to invite member';
         this.showError(message);
+        this.savingInvite.set(false);
       },
       complete: () => this.savingInvite.set(false)
     });
@@ -227,6 +228,7 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
       error: (error) => {
         const message = error?.error?.response_message || 'Failed to update role';
         this.showError(message);
+        this.savingRole.set(false);
       },
       complete: () => this.savingRole.set(false)
     });
@@ -267,6 +269,7 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
           const message = error?.error?.response_message ||
             (isLeavingProject ? 'Failed to leave project' : 'Failed to remove member');
           this.showError(message);
+          this.removingUserId.set(null);
         },
         complete: () => this.removingUserId.set(null)
       });
@@ -298,6 +301,7 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
       error: (error) => {
         const message = error?.error?.response_message || 'Failed to create task';
         this.showError(message);
+        this.savingNewTask.set(false);
       },
       complete: () => this.savingNewTask.set(false)
     });
@@ -509,7 +513,7 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
     if (!dateString) return 'N/A';
 
     try {
-      const formatted = this.datePipe.transform(dateString, 'MMM d, y');
+      const formatted = this.datePipe.transform(dateString, 'MMM d, y, h:mm a');
       return formatted || 'Invalid date';
     } catch {
       return 'Invalid date';

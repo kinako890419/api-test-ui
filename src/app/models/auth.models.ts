@@ -1,4 +1,4 @@
-// Request DTOs (match your backend contracts)
+// Request DTOs
 export interface LoginRequest {
   user_mail: string;
   user_password: string;
@@ -18,8 +18,8 @@ export interface LoginSuccess {
     user_email: string;
     user_name: string;
     user_role: string;
-    created_at: string; // ISO
-    updated_at: string; // ISO
+    created_at: string;
+    updated_at: string;
   };
 }
 
