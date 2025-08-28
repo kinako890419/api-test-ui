@@ -2,7 +2,7 @@
   <!-- Error State -->
   <div *ngIf="error()" class="error-state">
     <mat-icon class="error-icon">error_outline</mat-icon>
-    <h3>Something went wrong</h3>
+    <h3>Error</h3>
     <p>{{ error() }}</p>
     <button mat-raised-button color="primary" (click)="goBack()">
       <mat-icon>arrow_back</mat-icon>
@@ -37,6 +37,10 @@
             <mat-icon>access_time</mat-icon>
             <span>Created {{ formatDate(p.project_created_time) }}</span>
           </div>
+          <div *ngIf="p.deadline" class="meta-item">
+            <mat-icon>event</mat-icon>
+            <span>Deadline {{ formatDate(p.deadline) }}</span>
+          </div>
           <div *ngIf="p.project_updated_time" class="meta-item">
             <mat-icon>update</mat-icon>
             <span>Updated {{ formatDate(p.project_updated_time) }}</span>
@@ -62,10 +66,10 @@
           mat-raised-button
           color="primary"
           (click)="editProject()"
-          [matTooltip]="getEditTooltip()"
+          [matTooltip]="'Edit project details'"
         >
           <mat-icon>edit</mat-icon>
-          {{ getEditButtonText() }}
+          Edit Project
         </button>
       </mat-card-actions>
     </mat-card>
@@ -145,7 +149,6 @@
                   <mat-chip
                     *ngIf="m.user_id === p.creator_id"
                     class="creator-chip"
-                    color="accent"
                   >
                     Creator
                   </mat-chip>
@@ -169,7 +172,6 @@
 
                 <button
                   mat-icon-button
-                  color="warn"
                   (click)="removeMember(m.user_id)"
                   [matTooltip]="'Remove member'"
                 >
@@ -203,7 +205,6 @@
             <input
               matInput
               [(ngModel)]="newTagName"
-              maxlength="10"
               placeholder="Tag name"
               (keyup.enter)="addTag()"
             />
@@ -249,7 +250,6 @@
                     <input
                       matInput
                       [(ngModel)]="editingTagName"
-                      maxlength="10"
                       (keyup.enter)="saveEditTag(tag.tag_id)"
                       (keyup.escape)="cancelEditTag()"
                     />
@@ -306,6 +306,7 @@
                 <mat-option value="createdAt">Created time</mat-option>
                 <mat-option value="updatedAt">Updated time</mat-option>
                 <mat-option value="taskName">Task name</mat-option>
+                <mat-option value="deadline">Deadline</mat-option>
               </mat-select>
             </mat-form-field>
 
@@ -340,12 +341,13 @@
         <mat-card-header>
           <mat-card-title>Create New Task</mat-card-title>
         </mat-card-header>
+        <hr>
 
         <mat-card-content>
           <div class="new-task-form">
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>Task name</mat-label>
-              <input matInput [(ngModel)]="newTask.task_name" maxlength="50" required />
+              <input matInput [(ngModel)]="newTask.task_name" />
               <mat-hint>Maximum 50 characters</mat-hint>
             </mat-form-field>
 
@@ -355,7 +357,6 @@
                 matInput
                 [(ngModel)]="newTask.task_description"
                 rows="3"
-                maxlength="250"
               ></textarea>
               <mat-hint>Maximum 250 characters</mat-hint>
             </mat-form-field>
@@ -434,7 +435,6 @@
               *ngFor="let task of pendingTasks(); trackBy: trackByTaskId"
               class="task-card pending-task"
               (click)="openTask(task)"
-              cdkDrag
               appearance="outlined"
             >
               <mat-card-header>
@@ -461,7 +461,7 @@
             </mat-card>
 
             <div *ngIf="pendingTasks().length === 0" class="empty-column">
-              <mat-icon>check_circle_outline</mat-icon>
+              <mat-icon>pending_actions</mat-icon>
               <span>No pending tasks</span>
             </div>
           </div>
@@ -551,7 +551,7 @@
             </mat-card>
 
             <div *ngIf="completedTasks().length === 0" class="empty-column">
-              <mat-icon>pending_actions</mat-icon>
+              <mat-icon>check_circle_outline</mat-icon>
               <span>No completed tasks</span>
             </div>
           </div>

@@ -147,27 +147,27 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.loginSubscription?.unsubscribe();
   }
 
-  /**
-   * Get specific form field error message
-   */
-  getFieldErrorMessage(fieldName: string): string {
-    const field = this.form.get(fieldName);
-    if (field?.hasError('required')) {
-      return `${this.getFieldDisplayName(fieldName)} is required`;
-    }
-    if (field?.hasError('email')) {
-      return 'Please enter a valid email address';
-    }
-    if (field?.hasError('minlength')) {
-      const requiredLength = field.getError('minlength')?.requiredLength;
-      return `${this.getFieldDisplayName(fieldName)} must be at least ${requiredLength} characters`;
-    }
-    if (field?.hasError('maxlength')) {
-      const requiredLength = field.getError('maxlength')?.requiredLength;
-      return `${this.getFieldDisplayName(fieldName)} must be less than ${requiredLength} characters`;
-    }
-    return '';
-  }
+  // /**
+  //  * Get specific form field error message
+  //  */
+  // getFieldErrorMessage(fieldName: string): string {
+  //   const field = this.form.get(fieldName);
+  //   if (field?.hasError('required')) {
+  //     return `${this.getFieldDisplayName(fieldName)} is required`;
+  //   }
+  //   if (field?.hasError('email')) {
+  //     return 'Please enter a valid email address';
+  //   }
+  //   if (field?.hasError('minlength')) {
+  //     const requiredLength = field.getError('minlength')?.requiredLength;
+  //     return `${this.getFieldDisplayName(fieldName)} must be at least ${requiredLength} characters`;
+  //   }
+  //   if (field?.hasError('maxlength')) {
+  //     const requiredLength = field.getError('maxlength')?.requiredLength;
+  //     return `${this.getFieldDisplayName(fieldName)} must be less than ${requiredLength} characters`;
+  //   }
+  //   return '';
+  // }
 
   /**
    * Get user-friendly field display name

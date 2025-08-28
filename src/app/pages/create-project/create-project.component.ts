@@ -1,12 +1,14 @@
 import { Component, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
+import { CommonModule, DatePipe } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
-import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MatDialogRef } from '@angular/material/dialog';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -23,10 +25,13 @@ import { CreateProjectReq, ProjStatus } from '../../models';
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
     MatButtonModule,
     MatIconModule,
     MatSnackBarModule,
   ],
+  providers: [DatePipe],
   templateUrl: './create-project.component.html',
   styleUrls: ['./create-project.component.css']
 })
@@ -36,6 +41,7 @@ export class CreateProjectComponent {
   private readonly projectService = inject(ProjectService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly dialogRef = inject(MatDialogRef<CreateProjectComponent>, { optional: true });
+  private readonly datePipe = inject(DatePipe);
 
   // State signals
   readonly saving = signal<boolean>(false);
@@ -45,7 +51,8 @@ export class CreateProjectComponent {
   readonly form: FormGroup = this.fb.group({
     project_name: [''],
     project_description: [''],
-    project_status: ['PENDING']
+  project_status: ['PENDING'],
+  deadline: [null]
   });
 
   // Status options
@@ -62,7 +69,14 @@ export class CreateProjectComponent {
     this.saving.set(true);
     this.error.set('');
 
-    const newProject: CreateProjectReq = this.form.value;
+    const raw = this.form.value;
+    const newProject: CreateProjectReq = {
+      project_name: raw.project_name,
+      project_description: raw.project_description || undefined,
+      project_status: raw.project_status || undefined,
+      // API requires deadline (yyyy-MM-dd)
+      deadline: this.datePipe.transform(raw.deadline, 'yyyy-MM-dd') || ''
+    };
 
     this.projectService.create(newProject).subscribe({
       next: (response) => {

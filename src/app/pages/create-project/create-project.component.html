@@ -12,7 +12,6 @@
           <input
             matInput
             formControlName="project_name"
-            placeholder="Enter project name"
           />
           <mat-hint align="end">{{ form.get('project_name')?.value?.length || 0 }}/50</mat-hint>
         </mat-form-field>
@@ -23,7 +22,6 @@
           <textarea
             matInput
             formControlName="project_description"
-            placeholder="Enter project description (optional)"
             rows="4"
           ></textarea>
           <mat-hint align="end">{{ form.get('project_description')?.value?.length || 0 }}/250</mat-hint>
@@ -43,6 +41,14 @@
               {{ option.label }}
             </mat-option>
           </mat-select>
+        </mat-form-field>
+
+        <!-- Project Deadline -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Project Deadline</mat-label>
+          <input matInput [matDatepicker]="deadlinePicker" formControlName="deadline" placeholder="Select deadline" />
+          <mat-datepicker-toggle matIconSuffix [for]="deadlinePicker"></mat-datepicker-toggle>
+          <mat-datepicker #deadlinePicker></mat-datepicker>
         </mat-form-field>
 
         <!-- Error Message -->

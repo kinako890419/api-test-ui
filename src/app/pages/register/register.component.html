@@ -14,7 +14,6 @@
             matInput
             type="text"
             formControlName="user_name"
-            placeholder="Enter your username"
           >
           <mat-icon matSuffix>person</mat-icon>
 
@@ -27,7 +26,6 @@
             matInput
             type="email"
             formControlName="email"
-            placeholder="Enter your email address"
             autocomplete="email"
           >
           <mat-icon matSuffix>email</mat-icon>
@@ -40,8 +38,6 @@
             matInput
             [type]="hidePassword() ? 'password' : 'text'"
             formControlName="user_password"
-            placeholder="Enter your password"
-            autocomplete="new-password"
           >
           <button
             mat-icon-button

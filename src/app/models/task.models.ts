@@ -29,7 +29,8 @@ export interface ViewAllTaskResp {
 
 export interface TaskQuery {
   status?: ProjStatus;
-  sortBy?: 'createdAt' | 'updatedAt' | 'taskName';
+  // added 'deadline' to allow sorting tasks by their deadline
+  sortBy?: 'createdAt' | 'updatedAt' | 'taskName' | 'deadline';
   order?: Order;
 }
 

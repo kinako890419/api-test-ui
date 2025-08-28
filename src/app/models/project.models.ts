@@ -1,6 +1,6 @@
 // Common types
 export type ProjStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
-export type SortBy = 'createdAt' | 'updatedAt' | 'projectName';
+export type SortBy = 'createdAt' | 'updatedAt' | 'projectName' | 'deadline';
 export type Order = 'asc' | 'desc';
 export type ProjectMemberRole = 'OWNER' | 'USER';
 
@@ -26,6 +26,7 @@ export interface ProjDetailsResp {
   project_description?: string;
   project_status?: ProjStatus;
   member_list?: ProjectUserDetailsResp[];
+  deadline?: string;
   project_created_time?: string;
   project_updated_time?: string;
 }
@@ -56,12 +57,16 @@ export interface EditProjectReq {
   project_name?: string;
   project_description?: string;
   project_status?: ProjStatus;
+  /** Deadline in 'yyyy-MM-dd' format */
+  deadline?: string;
 }
 
 export interface CreateProjectReq {
   project_name: string;
   project_description?: string;
   project_status?: ProjStatus;
+  /** Deadline in 'yyyy-MM-dd' format */
+  deadline: string;
 }
 
 export interface ProjTagContentReq {

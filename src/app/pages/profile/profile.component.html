@@ -5,16 +5,17 @@
     <mat-card-header>
       <mat-card-title>Profile</mat-card-title>
     </mat-card-header>
+    <hr>
 
     <mat-card-content>
       <mat-form-field appearance="outline" class="full">
         <mat-label>User name</mat-label>
-        <input matInput [(ngModel)]="form.user_name" maxlength="20" />
+        <input matInput [(ngModel)]="form.user_name" />
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="full">
         <mat-label>Email</mat-label>
-        <input matInput [(ngModel)]="form.user_email" maxlength="50" />
+        <input matInput [(ngModel)]="form.user_email" />
       </mat-form-field>
 
       <p class="muted">User ID: {{ u.user_id }}</p>

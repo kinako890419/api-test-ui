@@ -8,12 +8,9 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
-import { MatMenuModule } from '@angular/material/menu';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { FormsModule } from '@angular/forms';
 import { ProjectService } from '../../services/project.service';
-import { AuthService } from '../../services/auth.service';
 import { ProjDetailsResp, SortBy, Order, ProjectQuery, ProjStatus } from '../../models';
 
 @Component({
@@ -29,9 +26,7 @@ import { ProjDetailsResp, SortBy, Order, ProjectQuery, ProjStatus } from '../../
     MatButtonModule,
     MatIconModule,
     MatPaginatorModule,
-    MatMenuModule,
     MatSnackBarModule,
-    MatDialogModule,
   ],
   providers: [DatePipe],
   templateUrl: './projects.component.html',
@@ -41,9 +36,7 @@ export class ProjectsComponent implements OnInit, OnDestroy {
   private readonly svc = inject(ProjectService);
   private readonly router = inject(Router);
   private readonly datePipe = inject(DatePipe);
-  private readonly auth = inject(AuthService);
   private readonly snackBar = inject(MatSnackBar);
-  private readonly dialog = inject(MatDialog);
 
   // UI State Signals
   readonly error = signal<string>('');
@@ -215,27 +208,8 @@ export class ProjectsComponent implements OnInit, OnDestroy {
     }
   }
 
-  /**
-   * Check if current user can edit the project
-   */
-  canEditProject(project: ProjDetailsResp): boolean {
-  // Frontend no longer restricts edit visibility; backend enforces permissions
-  return !!project;
-  }
+  // Removed fine-grained edit permission checks; backend enforces permissions
 
-  /**
-   * Check if project allows full editing (not completed)
-   */
-  canFullyEditProject(project: ProjDetailsResp): boolean {
-  return !!project; // backend enforces status rules
-  }
-
-  /**
-   * Get tooltip text for edit button
-   */
-  getEditTooltip(project: ProjDetailsResp): string {
-  return 'Edit project details';
-  }
 
   /**
    * Clear all filters and reload
@@ -250,21 +224,7 @@ export class ProjectsComponent implements OnInit, OnDestroy {
     this.load();
   }
 
-  /**
-   * Apply client-side keyword filtering if needed
-   * This is a fallback if the API doesn't support keyword search
-   */
-  private applyClientSideFiltering(): void {
-    const searchKeyword = this.keyword().trim().toLowerCase();
-    if (!searchKeyword) return;
-
-    const filteredItems = this.items().filter(project =>
-      this.matchesKeyword(project, searchKeyword)
-    );
-
-    this.items.set(filteredItems);
-    this.totalItems.set(filteredItems.length);
-  }
+  // (client-side keyword filtering handled inline in load())
 
   /**
    * Track by function for ngFor optimization

@@ -53,6 +53,10 @@
           <mat-icon>sort_by_alpha</mat-icon>
           Project Name
         </mat-option>
+        <mat-option value="deadline">
+          <mat-icon>event</mat-icon>
+          Deadline
+        </mat-option>
       </mat-select>
     </mat-form-field>
 
@@ -116,6 +120,16 @@
       tabindex="0"
       (keyup.enter)="open(project)"
     >
+      <!-- Member Avatars (top-right overlay) -->
+      <div class="member-avatars" *ngIf="project.member_list?.length">
+        <div
+          class="avatar-circle"
+          *ngFor="let m of project.member_list | slice:0:3"
+        >
+          {{ (m.user_name || '?') | slice:0:1 }}
+        </div>
+  <div class="avatar-ellipsis" *ngIf="project.member_list?.length! > 3">...</div>
+      </div>
       <mat-card-header>
         <div mat-card-avatar class="project-avatar">
           <mat-icon>folder</mat-icon>
@@ -140,8 +154,16 @@
         </p>
         <div class="project-meta">
           <span class="meta-item">
+            <mat-icon>person</mat-icon>
+            Created by user: {{ project.creator_name }}
+          </span>
+          <span class="meta-item">
             <mat-icon>schedule</mat-icon>
             Created: {{ formatDate(project.project_created_time) }}
+          </span>
+          <span class="meta-item" *ngIf="project.deadline">
+            <mat-icon>event</mat-icon>
+            Deadline: {{ formatDate(project.deadline) }}
           </span>
           <span class="meta-item" *ngIf="project.project_updated_time">
             <mat-icon>update</mat-icon>

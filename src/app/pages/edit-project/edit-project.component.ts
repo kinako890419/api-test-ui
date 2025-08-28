@@ -1,11 +1,13 @@
 import { Component, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
+import { CommonModule, DatePipe } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -22,12 +24,15 @@ import { ProjDetailsResp, EditProjectReq, ProjStatus } from '../../models';
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
+  MatDatepickerModule,
+  MatNativeDateModule,
     MatButtonModule,
     MatIconModule,
     MatSnackBarModule,
   ],
   templateUrl: './edit-project.component.html',
-  styleUrls: ['./edit-project.component.css']
+  styleUrls: ['./edit-project.component.css'],
+  providers: [DatePipe]
 })
 export class EditProjectComponent {
   private readonly fb = inject(FormBuilder);
@@ -35,6 +40,7 @@ export class EditProjectComponent {
   private readonly router = inject(Router);
   private readonly projectService = inject(ProjectService);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly datePipe = inject(DatePipe);
 
   // State signals
   readonly saving = signal<boolean>(false);
@@ -45,7 +51,8 @@ export class EditProjectComponent {
   readonly form: FormGroup = this.fb.group({
     project_name: [''],
     project_description: [''],
-    project_status: ['']
+  project_status: [''],
+  deadline: [null]
   });
 
   // Status options
@@ -86,14 +93,16 @@ export class EditProjectComponent {
         this.form.patchValue({
           project_name: project.project_name || '',
           project_description: project.project_description || '',
-          project_status: project.project_status || 'PENDING'
+          project_status: project.project_status || 'PENDING',
+          deadline: project.deadline ? new Date(project.deadline) : null
         });
 
-        // If project is completed, disable name and description fields
-        if (project.project_status === 'COMPLETED') {
-          this.form.get('project_name')?.disable();
-          this.form.get('project_description')?.disable();
-        }
+        // // If project is completed, disable name and description fields
+        // if (project.project_status === 'COMPLETED') {
+        //   this.form.get('project_name')?.disable();
+        //   this.form.get('project_description')?.disable();
+        //   this.form.get('deadline')?.disable();
+        // }
       },
       error: (err) => {
         const errorMessage = err?.error?.response_message ||
@@ -118,7 +127,7 @@ export class EditProjectComponent {
     this.saving.set(true);
     this.error.set('');
 
-    const updates: EditProjectReq = {};
+  const updates: EditProjectReq = {};
 
     // Only include enabled form fields in the update
     if (this.form.get('project_name')?.enabled) {
@@ -129,6 +138,21 @@ export class EditProjectComponent {
     }
     // Status is always included since it's always editable
     updates.project_status = this.form.get('project_status')?.value;
+
+    // Include deadline per API requirement (required in EditProjectReq)
+    const deadlineControl = this.form.get('deadline');
+    if (deadlineControl) {
+      const d: Date | null = deadlineControl.value;
+      // If control is disabled or empty, fall back to current project deadline
+      let effectiveDate: Date | null = d;
+      if (!effectiveDate) {
+        const current = this.project();
+        effectiveDate = current?.deadline ? new Date(current.deadline) : null;
+      }
+      if (effectiveDate) {
+        updates.deadline = this.datePipe.transform(effectiveDate, 'yyyy-MM-dd') || undefined;
+      }
+    }
 
     this.projectService.update(project.project_id, updates).subscribe({
       next: (response) => {

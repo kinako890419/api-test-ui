@@ -57,9 +57,7 @@
             <input
               matInput
               [(ngModel)]="form.task_name"
-              maxlength="50"
-              [disabled]="onlyStatusEditable()"
-              placeholder="Enter task name" />
+              [disabled]="onlyStatusEditable()"/>
             <mat-hint>{{ form.task_name?.length || 0 }}/50</mat-hint>
           </mat-form-field>
 
@@ -69,7 +67,6 @@
               matInput
               [(ngModel)]="form.task_description"
               rows="4"
-              maxlength="250"
               [disabled]="onlyStatusEditable()"></textarea>
             <mat-hint>{{ form.task_description?.length || 0 }}/250</mat-hint>
           </mat-form-field>
@@ -160,7 +157,7 @@
         <!-- Invite Form -->
         <div *ngIf="t.is_editable" class="invite-section">
           <mat-form-field appearance="outline" class="invite-field">
-            <mat-label>Add team members</mat-label>
+            <mat-label>Add task users</mat-label>
             <mat-select [(ngModel)]="inviteUserIds" multiple>
               <mat-option
                 *ngFor="let m of projectMembers()"
@@ -168,7 +165,7 @@
                 [disabled]="isAlreadyTaskMember(m.user_id)">
                 <div class="user-option">
                   <span class="user-name">{{ m.user_name }}</span>
-                  <span class="user-email">{{ m.user_email }}</span>
+                  <span class="user-email">({{ m.user_email }})</span>
                 </div>
               </mat-option>
             </mat-select>
@@ -357,7 +354,6 @@
                 <button
                   *ngIf="editingCommentId() !== c.comment_id"
                   mat-icon-button
-                  color="warn"
                   (click)="deleteComment(c.comment_id)"
                   matTooltip="Delete comment">
                   <mat-icon>delete</mat-icon>
@@ -374,8 +370,8 @@
                   rows="3"
                   [ngModel]="editingCommentContent()"
                   (ngModelChange)="editingCommentContent.set($event)"
-                  maxlength="500"></textarea>
-                <mat-hint>{{ editingCommentContent().length }}/500</mat-hint>
+                  ></textarea>
+                <mat-hint>{{ editingCommentContent().length }}/255</mat-hint>
               </mat-form-field>
               <div class="form-actions">
                 <button mat-button (click)="cancelEditComment()">Cancel</button>
@@ -409,9 +405,8 @@
               rows="3"
               [ngModel]="newCommentContent()"
               (ngModelChange)="newCommentContent.set($event)"
-              maxlength="500"
-              placeholder="Share your thoughts..."></textarea>
-            <mat-hint>{{ newCommentContent().length }}/500</mat-hint>
+              ></textarea>
+            <mat-hint>{{ newCommentContent().length }}/255</mat-hint>
           </mat-form-field>
           <div class="form-actions">
             <button

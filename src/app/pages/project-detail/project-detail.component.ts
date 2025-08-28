@@ -7,7 +7,6 @@ import { Subject, takeUntil, forkJoin } from 'rxjs';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatTabsModule } from '@angular/material/tabs';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -56,7 +55,6 @@ interface NewTaskForm {
     MatCardModule,
     MatButtonModule,
     MatIconModule,
-    MatTabsModule,
     MatSnackBarModule,
     MatFormFieldModule,
     MatInputModule,
@@ -475,20 +473,7 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
     return !!project?.member_list?.some(m => m.user_id === userId);
   }
 
-  /**
-   * Get edit button text based on project status
-   */
-  getEditButtonText(): string {
-  return 'Edit Project';
-  }
-
-  /**
-   * Get edit button tooltip
-   */
-  getEditTooltip(): string {
-  // Keep a generic tooltip; backend decides permission
-  return 'Edit project details';
-  }
+  // Removed trivial helpers getEditButtonText/getEditTooltip; inline strings in template
 
   /**
    * Get project status icon
@@ -619,9 +604,21 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
     .pipe(takeUntil(this.destroy$))
     .subscribe({
       next: ({ pending, inProgress, completed }) => {
-        this.pendingTasks.set(pending.tasks_list || []);
-        this.inProgressTasks.set(inProgress.tasks_list || []);
-        this.completedTasks.set(completed.tasks_list || []);
+        let pendingList = pending.tasks_list || [];
+        let inProgressList = inProgress.tasks_list || [];
+        let completedList = completed.tasks_list || [];
+
+        // If sorting by deadline is requested but backend doesn't support it,
+        // perform client-side sorting as a fallback.
+        if (this.taskSortBy === 'deadline') {
+          pendingList = this.sortTasksByDeadline(pendingList, this.taskSortOrder);
+          inProgressList = this.sortTasksByDeadline(inProgressList, this.taskSortOrder);
+          completedList = this.sortTasksByDeadline(completedList, this.taskSortOrder);
+        }
+
+        this.pendingTasks.set(pendingList);
+        this.inProgressTasks.set(inProgressList);
+        this.completedTasks.set(completedList);
       },
       error: (error) => {
         const message = error?.error?.response_message || 'Failed to load tasks';
@@ -629,6 +626,26 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
         console.error('Failed to load tasks:', error);
       }
     });
+  }
+
+  /**
+   * Sort tasks by their deadline date. Tasks without a deadline will be treated as
+   * greater than dated tasks when sorting ascending (so they appear last), and vice versa.
+   */
+  private sortTasksByDeadline(list: TaskListResp[], order: Order): TaskListResp[] {
+    const compare = (a: TaskListResp, b: TaskListResp) => {
+      const aVal = a.task_deadline ? new Date(a.task_deadline).getTime() : null;
+      const bVal = b.task_deadline ? new Date(b.task_deadline).getTime() : null;
+
+      if (aVal === bVal) return 0;
+      // Treat null (no deadline) as greater than any date
+      if (aVal === null) return 1;
+      if (bVal === null) return -1;
+      return aVal < bVal ? -1 : 1;
+    };
+
+    const sorted = [...list].sort((a, b) => compare(a, b));
+    return order === 'desc' ? sorted.reverse() : sorted;
   }
 
   /**
